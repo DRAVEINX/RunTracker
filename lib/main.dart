@@ -222,52 +222,89 @@ class _RunHomePageState extends State<RunHomePage> {
   }
 
   Future<void> pauseRun() async {
-    await gps?.cancel();
-    gps = null;
-    timer?.cancel();
+    if (!running || paused) return;
     setState(() {
       paused = true;
-      status = 'Training gepauzeerd';
+      status = 'Training pauzeren…';
     });
+    timer?.cancel();
+    timer = null;
+    final subscription = gps;
+    gps = null;
+    await subscription?.cancel();
+    if (!mounted) return;
+    setState(() => status = 'Training gepauzeerd');
   }
 
   Future<void> resumeRun() async {
+    if (!running || !paused) return;
     if (!await checkLocation()) return;
-    setState(() {
-      paused = false;
-      status = 'GPS hervatten…';
-    });
-    timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && running && !paused) setState(() => elapsed++);
-    });
-    gps = Geolocator.getPositionStream(locationSettings: settings()).listen(
-      acceptPosition,
-      onError: (_) {
-        if (mounted) setState(() => status = 'GPS tijdelijk niet beschikbaar');
-      },
-    );
+    try {
+      setState(() {
+        paused = false;
+        status = 'GPS hervatten…';
+      });
+      timer?.cancel();
+      timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted && running && !paused) setState(() => elapsed++);
+      });
+      gps = Geolocator.getPositionStream(locationSettings: settings()).listen(
+        acceptPosition,
+        onError: (_) {
+          if (mounted) setState(() => status = 'GPS tijdelijk niet beschikbaar');
+        },
+      );
+    } catch (_) {
+      timer?.cancel();
+      timer = null;
+      if (mounted) {
+        setState(() {
+          paused = true;
+          status = 'Hervatten is niet gelukt. Probeer het opnieuw.';
+        });
+      }
+    }
   }
 
   Future<void> finishRun() async {
-    await gps?.cancel();
-    gps = null;
-    timer?.cancel();
-    if (startedAt != null && (elapsed > 0 || meters > 0)) {
-      history.insert(0, RunRecord(
-        startedAt!.toIso8601String(),
-        elapsed,
-        meters,
-        route.map((p) => [p.latitude, p.longitude]).toList(),
-      ));
-      if (history.length > 100) history.removeRange(100, history.length);
-      await saveHistory();
-    }
-    if (!mounted) return;
+    if (!running) return;
     setState(() {
       running = false;
       paused = false;
-      status = 'Training opgeslagen op dit apparaat';
+      status = 'Training afronden en opslaan…';
     });
+    timer?.cancel();
+    timer = null;
+    final subscription = gps;
+    gps = null;
+    await subscription?.cancel();
+    final record = startedAt != null && (elapsed > 0 || meters > 0)
+        ? RunRecord(
+            startedAt!.toIso8601String(),
+            elapsed,
+            meters,
+            route.map((p) => [p.latitude, p.longitude]).toList(),
+          )
+        : null;
+    if (record != null) {
+      history.insert(0, record);
+      if (history.length > 100) history.removeRange(100, history.length);
+      try {
+        await saveHistory();
+        if (mounted) {
+          setState(() => status = 'Training opgeslagen op dit apparaat');
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() => status = 'Training afgerond, maar opslaan is mislukt');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('De training is afgerond, maar kon niet worden opgeslagen. Controleer de opslagruimte en probeer opnieuw te exporteren.')),
+          );
+        }
+      }
+    } else if (mounted) {
+      setState(() => status = 'Training afgerond');
+    }
   }
 
 
