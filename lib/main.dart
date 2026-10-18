@@ -350,9 +350,21 @@ class _RunHomePageState extends State<RunHomePage> {
     );
     controller.dispose();
     if (value == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('runtracker_weekly_goal_km', value);
-    if (mounted) setState(() => weeklyGoalKm = value);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = await prefs.setDouble('runtracker_weekly_goal_km', value);
+      if (!saved) throw StateError('Weekdoel kon niet worden opgeslagen');
+      if (!mounted) return;
+      setState(() => weeklyGoalKm = value);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Weekdoel opgeslagen')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Weekdoel opslaan is niet gelukt. Probeer het opnieuw.')),
+      );
+    }
   }
 
   Future<void> exportHistoryCsv() async {
