@@ -79,6 +79,7 @@ class _RunHomePageState extends State<RunHomePage> {
   String status = 'Klaar om te gaan';
   DateTime? startedAt;
   double weeklyGoalKm = 10;
+  String historyFilter = 'Alles';
 
   @override
   void initState() {
@@ -649,6 +650,20 @@ class _RunHomePageState extends State<RunHomePage> {
         Text('Je opgeslagen runs verschijnen hier.', style: TextStyle(color: muted)),
       ]));
     }
+    final now = DateTime.now();
+    final displayedHistory = history.where((run) {
+      final date = DateTime.tryParse(run.date)?.toLocal();
+      if (date == null) return false;
+      if (historyFilter == 'Deze week') {
+        final weekStart = DateTime(now.year, now.month, now.day)
+            .subtract(Duration(days: now.weekday - 1));
+        return !date.isBefore(weekStart);
+      }
+      if (historyFilter == 'Deze maand') {
+        return !date.isBefore(DateTime(now.year, now.month, 1));
+      }
+      return true;
+    }).toList();
     final totalMeters = history.fold<double>(0, (sum, run) => sum + run.meters);
     final totalSeconds = history.fold<int>(0, (sum, run) => sum + run.seconds);
     final weekStart = DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
@@ -669,7 +684,7 @@ class _RunHomePageState extends State<RunHomePage> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: history.length + 1,
+      itemCount: displayedHistory.length + 2,
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
@@ -746,10 +761,32 @@ class _RunHomePageState extends State<RunHomePage> {
               const SizedBox(height: 20),
               const Text('RECENTE TRAININGEN', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.6)),
               const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                children: ['Alles', 'Deze week', 'Deze maand'].map((filter) =>
+                  ChoiceChip(
+                    label: Text(filter),
+                    selected: historyFilter == filter,
+                    onSelected: (_) => setState(() => historyFilter = filter),
+                    selectedColor: lime,
+                    labelStyle: TextStyle(
+                      color: historyFilter == filter ? ink : Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ).toList(),
+              ),
+              const SizedBox(height: 10),
             ]),
           );
         }
-        final run = history[index - 1];
+        if (displayedHistory.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+            child: Text('Geen trainingen in deze periode.', style: TextStyle(color: muted)),
+          );
+        }
+        final run = displayedHistory[index - 1];
         final date = DateTime.parse(run.date).toLocal();
         final dateText = date.day.toString().padLeft(2, '0') + '-' +
             date.month.toString().padLeft(2, '0') + '-' + date.year.toString();
