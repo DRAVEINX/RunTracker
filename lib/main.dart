@@ -300,6 +300,36 @@ class _RunHomePageState extends State<RunHomePage> {
     }
   }
 
+  Future<void> exportRunGpx(RunRecord run) async {
+    if (run.coordinates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Deze training bevat geen GPS-route om te exporteren')),
+      );
+      return;
+    }
+    final points = run.coordinates.map((point) =>
+        '      <trkpt lat="${point[0]}" lon="${point[1]}"></trkpt>').join('\\n');
+    final date = DateTime.tryParse(run.date)?.toUtc().toIso8601String();
+    final gpx = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<gpx version="1.1" creator="RunTracker" xmlns="http://www.topografix.com/GPX/1/1">',
+      '  <trk>',
+      '    <name>RunTracker training</name>',
+      if (date != null) '    <time>$date</time>',
+      '    <trkseg>',
+      points,
+      '    </trkseg>',
+      '  </trk>',
+      '</gpx>',
+    ].join('\\n');
+    await Clipboard.setData(ClipboardData(text: gpx));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('GPX-route gekopieerd. Plak de inhoud in een .gpx-bestand.')),
+      );
+    }
+  }
+
   Future<void> deleteRun(RunRecord run) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -732,9 +762,11 @@ class _RunHomePageState extends State<RunHomePage> {
                 onSelected: (value) {
                   if (value == 'delete') deleteRun(run);
                   if (value == 'details') showRunDetails(run);
+                  if (value == 'gpx') exportRunGpx(run);
                 },
                 itemBuilder: (context) => const [
                   PopupMenuItem(value: 'details', child: Text('Details bekijken')),
+                  PopupMenuItem(value: 'gpx', child: Text('GPS-route exporteren (GPX)')),
                   PopupMenuItem(value: 'delete', child: Text('Training verwijderen')),
                 ],
               ),
