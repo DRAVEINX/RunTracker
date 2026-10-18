@@ -436,6 +436,62 @@ class _RunHomePageState extends State<RunHomePage> {
         ]),
       );
 
+  void showRunDetails(RunRecord run) {
+    final points = run.coordinates.map((p) => LatLng(p[0], p[1])).toList();
+    final center = points.isEmpty ? const LatLng(52.0907, 5.1214) : points[points.length ~/ 2];
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: ink,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.82,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                const Expanded(child: Text('TRAININGDETAILS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
+                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+              ]),
+              const SizedBox(height: 12),
+              Expanded(
+                flex: 5,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: points.isEmpty
+                      ? const Center(child: Text('Voor deze training is geen GPS-route opgeslagen.', textAlign: TextAlign.center, style: TextStyle(color: muted)))
+                      : FlutterMap(
+                          options: MapOptions(initialCenter: center, initialZoom: 13),
+                          children: [
+                            TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.draveinx.runtracker'),
+                            if (points.length > 1) PolylineLayer(polylines: [Polyline(points: points, color: lime, strokeWidth: 5)]),
+                            MarkerLayer(markers: [
+                              Marker(point: points.first, width: 18, height: 18, child: Container(decoration: BoxDecoration(color: lime, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)))),
+                              if (points.length > 1) Marker(point: points.last, width: 18, height: 18, child: Container(decoration: BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)))),
+                            ]),
+                            const RichAttributionWidget(attributions: [TextSourceAttribution('© OpenStreetMap contributors')]),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(child: _statCard('AFSTAND', (run.meters / 1000).toStringAsFixed(2), 'km', Icons.route_rounded)),
+                const SizedBox(width: 8),
+                Expanded(child: _statCard('DUUR', clock(run.seconds), 'min:sec', Icons.timer_rounded)),
+                const SizedBox(width: 8),
+                Expanded(child: _statCard('TEMPO', paceFor(run.meters, run.seconds), '/km', Icons.speed_rounded)),
+              ]),
+              const SizedBox(height: 12),
+              Text('GPS-punten: ${run.coordinates.length}', style: const TextStyle(color: muted, fontSize: 12)),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget historyView() {
     if (history.isEmpty) {
       return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -526,10 +582,13 @@ class _RunHomePageState extends State<RunHomePage> {
             date.month.toString().padLeft(2, '0') + '-' + date.year.toString();
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
-            child: Row(children: [
+          child: InkWell(
+            onTap: () => showRunDetails(run),
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
+              child: Row(children: [
               Container(width: 42, height: 42, decoration: BoxDecoration(color: lime.withValues(alpha: .12), borderRadius: BorderRadius.circular(13)),
                   child: const Icon(Icons.directions_run_rounded, color: lime)),
               const SizedBox(width: 12),
@@ -546,6 +605,7 @@ class _RunHomePageState extends State<RunHomePage> {
                     style: const TextStyle(color: muted, fontSize: 11)),
               ]),
             ]),
+            ),
           ),
         );
       },
