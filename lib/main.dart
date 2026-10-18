@@ -228,11 +228,37 @@ class _RunHomePageState extends State<RunHomePage> {
       if (history.length > 100) history.removeRange(100, history.length);
       await saveHistory();
     }
+    if (!mounted) return;
     setState(() {
       running = false;
       paused = false;
       status = 'Training opgeslagen op dit apparaat';
     });
+  }
+
+  Future<void> deleteRun(RunRecord run) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: panel,
+        title: const Text('Training verwijderen?'),
+        content: const Text('Deze training en de bijbehorende opgeslagen GPS-route worden van dit apparaat verwijderd.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Annuleren')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Verwijderen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => history.remove(run));
+    await saveHistory();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Training verwijderd')));
+    }
   }
 
   String clock(int value) {
@@ -604,6 +630,18 @@ class _RunHomePageState extends State<RunHomePage> {
                 Text(paceFor(run.meters, run.seconds) + ' /km',
                     style: const TextStyle(color: muted, fontSize: 11)),
               ]),
+              PopupMenuButton<String>(
+                tooltip: 'Trainingopties',
+                icon: const Icon(Icons.more_vert_rounded, color: muted),
+                onSelected: (value) {
+                  if (value == 'delete') deleteRun(run);
+                  if (value == 'details') showRunDetails(run);
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'details', child: Text('Details bekijken')),
+                  PopupMenuItem(value: 'delete', child: Text('Training verwijderen')),
+                ],
+              ),
             ]),
             ),
           ),
