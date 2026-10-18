@@ -125,7 +125,7 @@ class _RunHomePageState extends State<RunHomePage> {
     return true;
   }
 
-  AndroidSettings settings() => const AndroidSettings(
+  AndroidSettings settings() => AndroidSettings(
         accuracy: LocationAccuracy.bestForNavigation,
         distanceFilter: 5,
         intervalDuration: Duration(seconds: 2),
