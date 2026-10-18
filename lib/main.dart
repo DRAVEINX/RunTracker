@@ -292,13 +292,13 @@ class _RunHomePageState extends State<RunHomePage> {
       'Datum;Duur_seconden;Afstand_meter;Tempo_per_km;GPS_punten',
       ...history.map((run) {
         final date = DateTime.tryParse(run.date)?.toLocal().toIso8601String() ?? run.date;
-        return '\${date};\${run.seconds};\${run.meters.toStringAsFixed(1)};\${paceFor(run.meters, run.seconds)};\${run.coordinates.length}';
+        return ${date};${run.seconds};${run.meters.toStringAsFixed(1)};${paceFor(run.meters, run.seconds)};${run.coordinates.length};
       }),
     ];
     try {
       final directory = await getTemporaryDirectory();
-      final file = File('\${directory.path}/runtracker-trainingen-\${DateTime.now().millisecondsSinceEpoch}.csv');
-      await file.writeAsString('\uFEFF\${rows.join('\n')}', flush: true);
+      final file = File(directory.path + '/runtracker-trainingen-' + DateTime.now().millisecondsSinceEpoch.toString() + '.csv');
+      await file.writeAsString('\uFEFF' + rows.join('\n'), flush: true);
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'text/csv')],
         text: 'Trainingsgeschiedenis geëxporteerd vanuit RunTracker',
