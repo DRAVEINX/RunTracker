@@ -758,6 +758,23 @@ class _RunHomePageState extends State<RunHomePage> {
                       style: const TextStyle(color: muted, fontSize: 11)),
                 ]),
               ),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('DEZE MAAND', style: TextStyle(color: lime, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontSize: 11)),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: _statCard('AFSTAND', (monthlyMeters / 1000).toStringAsFixed(2), 'km', Icons.calendar_month_rounded)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _statCard('TRAININGEN', monthlyRuns.length.toString(), 'runs', Icons.fitness_center_rounded)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _statCard('BEWEEGTIJD', clock(monthlySeconds), 'uur:min:sec', Icons.timer_rounded)),
+                  ]),
+                ]),
+              ),
               const SizedBox(height: 20),
               const Text('RECENTE TRAININGEN', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.6)),
               const SizedBox(height: 10),
