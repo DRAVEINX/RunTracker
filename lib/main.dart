@@ -96,12 +96,12 @@ class _RunHomePageState extends State<RunHomePage> {
   }
 
   Future<void> loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedGoal = prefs.getDouble('runtracker_weekly_goal_km') ?? 10;
-    if (mounted) setState(() => weeklyGoalKm = savedGoal);
-    final value = prefs.getString('runtracker_history');
-    if (value == null) return;
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedGoal = prefs.getDouble('runtracker_weekly_goal_km') ?? 10;
+      if (mounted) setState(() => weeklyGoalKm = savedGoal);
+      final value = prefs.getString('runtracker_history');
+      if (value == null) return;
       final records = (jsonDecode(value) as List<dynamic>)
           .map((e) => RunRecord.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -116,7 +116,7 @@ class _RunHomePageState extends State<RunHomePage> {
       if (mounted) {
         setState(() => status = 'Geschiedenis kon niet worden geladen');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Opgeslagen trainingen konden niet worden gelezen. Je bestaande gegevens zijn niet overschreven.')),
+          const SnackBar(content: Text('Opgeslagen trainingen konden niet worden gelezen. Je bestaande gegevens zijn niet overschreven. Controleer de opslagruimte en start de app opnieuw.')),
         );
       }
     }
