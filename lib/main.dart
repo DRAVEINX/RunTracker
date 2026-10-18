@@ -691,7 +691,7 @@ class _RunHomePageState extends State<RunHomePage> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: displayedHistory.length + 2,
+      itemCount: displayedHistory.isEmpty ? 2 : displayedHistory.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
