@@ -75,6 +75,7 @@ class _RunHomePageState extends State<RunHomePage> {
   bool showHistory = false;
   String status = 'Klaar om te gaan';
   DateTime? startedAt;
+  double weeklyGoalKm = 10;
 
   @override
   void initState() {
@@ -91,6 +92,8 @@ class _RunHomePageState extends State<RunHomePage> {
 
   Future<void> loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedGoal = prefs.getDouble('runtracker_weekly_goal_km') ?? 10;
+    if (mounted) setState(() => weeklyGoalKm = savedGoal);
     final value = prefs.getString('runtracker_history');
     if (value == null) return;
     try {
@@ -235,6 +238,44 @@ class _RunHomePageState extends State<RunHomePage> {
       paused = false;
       status = 'Training opgeslagen op dit apparaat';
     });
+  }
+
+
+  Future<void> editWeeklyGoal() async {
+    final controller = TextEditingController(text: weeklyGoalKm.toStringAsFixed(1));
+    final value = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: panel,
+        title: const Text('Weekdoel instellen'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Afstand per week (km)',
+            helperText: 'Kies een haalbaar doel, bijvoorbeeld 10 km.',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuleren')),
+          FilledButton(
+            onPressed: () {
+              final parsed = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+              if (parsed != null && parsed > 0 && parsed <= 500) {
+                Navigator.pop(dialogContext, parsed);
+              }
+            },
+            child: const Text('Opslaan'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('runtracker_weekly_goal_km', value);
+    if (mounted) setState(() => weeklyGoalKm = value);
   }
 
   Future<void> exportHistoryCsv() async {
@@ -614,13 +655,39 @@ class _RunHomePageState extends State<RunHomePage> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('DEZE WEEK', style: TextStyle(color: lime, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontSize: 11)),
-                  const SizedBox(height: 10),
                   Row(children: [
-                    Expanded(child: Text((weeklyMeters / 1000).toStringAsFixed(2) + ' km', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
-                    Expanded(child: Text(weeklyRuns.length.toString() + (weeklyRuns.length == 1 ? ' training' : ' trainingen'), textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.w700))),
+                    const Expanded(child: Text('DEZE WEEK', style: TextStyle(color: lime, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontSize: 11))),
+                    TextButton.icon(
+                      onPressed: editWeeklyGoal,
+                      icon: const Icon(Icons.tune_rounded, size: 16),
+                      label: const Text('Weekdoel'),
+                    ),
                   ]),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    Expanded(child: Text((weeklyMeters / 1000).toStringAsFixed(2) + ' / ' + weeklyGoalKm.toStringAsFixed(1) + ' km',
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900))),
+                    Text(weeklyRuns.length.toString() + (weeklyRuns.length == 1 ? ' training' : ' trainingen'),
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ]),
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: ((weeklyMeters / 1000) / weeklyGoalKm).clamp(0.0, 1.0),
+                      minHeight: 9,
+                      backgroundColor: const Color(0xFF25343B),
+                      valueColor: const AlwaysStoppedAnimation<Color>(lime),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    (weeklyMeters / 1000) >= weeklyGoalKm
+                        ? 'Weekdoel behaald! Goed bezig.'
+                        : ((weeklyGoalKm - weeklyMeters / 1000).toStringAsFixed(1) + ' km te gaan tot je weekdoel.'),
+                    style: const TextStyle(color: muted, fontSize: 11),
+                  ),
+                  const SizedBox(height: 5),
                   Text('Beweegtijd: ' + clock(weeklySeconds) + ' · Totale beweegtijd: ' + clock(totalSeconds),
                       style: const TextStyle(color: muted, fontSize: 11)),
                 ]),
