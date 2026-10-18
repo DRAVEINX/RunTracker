@@ -74,6 +74,7 @@ class _RunHomePageState extends State<RunHomePage> {
   int elapsed = 0;
   double meters = 0;
   bool running = false;
+  bool starting = false;
   bool paused = false;
   bool showHistory = false;
   String status = 'Klaar om te gaan';
@@ -145,26 +146,40 @@ class _RunHomePageState extends State<RunHomePage> {
       );
 
   Future<void> startRun() async {
-    if (!await checkLocation()) return;
+    if (running || starting) return;
     setState(() {
-      route.clear();
-      elapsed = 0;
-      meters = 0;
-      startedAt = DateTime.now();
-      running = true;
-      paused = false;
-      status = 'GPS-signaal zoeken…';
+      starting = true;
+      status = 'Locatietoestemming controleren…';
     });
+    try {
+      if (!await checkLocation()) return;
+      setState(() {
+        route.clear();
+        elapsed = 0;
+        meters = 0;
+        startedAt = DateTime.now();
+        starting = false;
+        running = true;
+        paused = false;
+        status = 'GPS-signaal zoeken…';
+      });
     timer?.cancel();
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && running && !paused) setState(() => elapsed++);
     });
-    gps = Geolocator.getPositionStream(locationSettings: settings()).listen(
-      acceptPosition,
-      onError: (_) {
-        if (mounted) setState(() => status = 'GPS tijdelijk niet beschikbaar');
-      },
-    );
+      gps = Geolocator.getPositionStream(locationSettings: settings()).listen(
+        acceptPosition,
+        onError: (_) {
+          if (mounted) setState(() => status = 'GPS tijdelijk niet beschikbaar');
+        },
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => status = 'Training starten is niet gelukt. Controleer GPS en probeer opnieuw.');
+      }
+    } finally {
+      if (mounted && starting) setState(() => starting = false);
+    }
   }
 
   void acceptPosition(Position p) {
