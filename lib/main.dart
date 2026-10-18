@@ -185,8 +185,18 @@ class _RunHomePageState extends State<RunHomePage> {
         },
       );
     } catch (_) {
+      timer?.cancel();
+      timer = null;
+      final subscription = gps;
+      gps = null;
+      await subscription?.cancel();
       if (mounted) {
-        setState(() => status = 'Training starten is niet gelukt. Controleer GPS en probeer opnieuw.');
+        setState(() {
+          running = false;
+          paused = false;
+          starting = false;
+          status = 'Training starten is niet gelukt. Controleer GPS en probeer opnieuw.';
+        });
       }
     } finally {
       if (mounted && starting) setState(() => starting = false);
