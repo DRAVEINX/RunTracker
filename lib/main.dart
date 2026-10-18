@@ -673,6 +673,13 @@ class _RunHomePageState extends State<RunHomePage> {
     }).toList();
     final weeklyMeters = weeklyRuns.fold<double>(0, (sum, run) => sum + run.meters);
     final weeklySeconds = weeklyRuns.fold<int>(0, (sum, run) => sum + run.seconds);
+    final monthStart = DateTime(now.year, now.month, 1);
+    final monthlyRuns = history.where((run) {
+      final date = DateTime.tryParse(run.date)?.toLocal();
+      return date != null && !date.isBefore(monthStart);
+    }).toList();
+    final monthlyMeters = monthlyRuns.fold<double>(0, (sum, run) => sum + run.meters);
+    final monthlySeconds = monthlyRuns.fold<int>(0, (sum, run) => sum + run.seconds);
     final longestRun = history.isEmpty
         ? null
         : history.reduce((a, b) => a.meters >= b.meters ? a : b);
