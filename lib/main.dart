@@ -423,6 +423,19 @@ class _RunHomePageState extends State<RunHomePage> {
         ),
       ));
 
+  Widget _statCard(String label, String value, String unit, IconData icon) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: lime, size: 19),
+          const SizedBox(height: 12),
+          Text(value, style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
+          Text(unit, style: const TextStyle(color: lime, fontSize: 10, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 5),
+          Text(label, style: const TextStyle(color: muted, fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.w700)),
+        ]),
+      );
+
   Widget historyView() {
     if (history.isEmpty) {
       return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -433,35 +446,83 @@ class _RunHomePageState extends State<RunHomePage> {
         Text('Je opgeslagen runs verschijnen hier.', style: TextStyle(color: muted)),
       ]));
     }
-    return ListView.separated(
+    final totalMeters = history.fold<double>(0, (sum, run) => sum + run.meters);
+    final totalSeconds = history.fold<int>(0, (sum, run) => sum + run.seconds);
+    final weekStart = DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
+    final weeklyRuns = history.where((run) {
+      final date = DateTime.tryParse(run.date)?.toLocal();
+      return date != null && !date.isBefore(DateTime(weekStart.year, weekStart.month, weekStart.day));
+    }).toList();
+    final weeklyMeters = weeklyRuns.fold<double>(0, (sum, run) => sum + run.meters);
+    final weeklySeconds = weeklyRuns.fold<int>(0, (sum, run) => sum + run.seconds);
+
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: history.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemCount: history.length + 1,
       itemBuilder: (context, index) {
-        final run = history[index];
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text('JOUW VOORTGANG', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.6)),
+              ),
+              Row(children: [
+                Expanded(child: _statCard('TOTAAL', (totalMeters / 1000).toStringAsFixed(1), 'km', Icons.route_rounded)),
+                const SizedBox(width: 10),
+                Expanded(child: _statCard('TRAININGEN', history.length.toString(), 'runs', Icons.fitness_center_rounded)),
+              ]),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('DEZE WEEK', style: TextStyle(color: lime, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontSize: 11)),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: Text((weeklyMeters / 1000).toStringAsFixed(2) + ' km', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+                    Expanded(child: Text(weeklyRuns.length.toString() + (weeklyRuns.length == 1 ? ' training' : ' trainingen'), textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.w700))),
+                  ]),
+                  const SizedBox(height: 4),
+                  Text('Beweegtijd: ' + clock(weeklySeconds) + ' · Totale beweegtijd: ' + clock(totalSeconds),
+                      style: const TextStyle(color: muted, fontSize: 11)),
+                ]),
+              ),
+              const SizedBox(height: 20),
+              const Text('RECENTE TRAININGEN', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.6)),
+              const SizedBox(height: 10),
+            ]),
+          );
+        }
+        final run = history[index - 1];
         final date = DateTime.parse(run.date).toLocal();
         final dateText = date.day.toString().padLeft(2, '0') + '-' +
             date.month.toString().padLeft(2, '0') + '-' + date.year.toString();
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
-          child: Row(children: [
-            Container(width: 42, height: 42, decoration: BoxDecoration(color: lime.withValues(alpha: .12), borderRadius: BorderRadius.circular(13)),
-                child: const Icon(Icons.directions_run_rounded, color: lime)),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(dateText, style: const TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              Text(clock(run.seconds) + ' · ' + run.coordinates.length.toString() + ' GPS-punten',
-                  style: const TextStyle(color: muted, fontSize: 11)),
-            ])),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text((run.meters / 1000).toStringAsFixed(2) + ' km',
-                  style: const TextStyle(color: lime, fontSize: 17, fontWeight: FontWeight.w900)),
-              Text(paceFor(run.meters, run.seconds) + ' /km',
-                  style: const TextStyle(color: muted, fontSize: 11)),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
+            child: Row(children: [
+              Container(width: 42, height: 42, decoration: BoxDecoration(color: lime.withValues(alpha: .12), borderRadius: BorderRadius.circular(13)),
+                  child: const Icon(Icons.directions_run_rounded, color: lime)),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(dateText, style: const TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(clock(run.seconds) + ' · ' + run.coordinates.length.toString() + ' GPS-punten',
+                    style: const TextStyle(color: muted, fontSize: 11)),
+              ])),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text((run.meters / 1000).toStringAsFixed(2) + ' km',
+                    style: const TextStyle(color: lime, fontSize: 17, fontWeight: FontWeight.w900)),
+                Text(paceFor(run.meters, run.seconds) + ' /km',
+                    style: const TextStyle(color: muted, fontSize: 11)),
+              ]),
             ]),
-          ]),
+          ),
         );
       },
     );
