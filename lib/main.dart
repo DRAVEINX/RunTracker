@@ -322,7 +322,7 @@ class _RunHomePageState extends State<RunHomePage> {
     }
     try {
       final points = run.coordinates.map((point) =>
-          '      <trkpt lat="${point[0]}" lon="${point[1]}"></trkpt>').join('\\n');
+          '      <trkpt lat="${point[0]}" lon="${point[1]}"></trkpt>').join('\n');
       final date = DateTime.tryParse(run.date)?.toUtc().toIso8601String();
       final gpx = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -335,7 +335,7 @@ class _RunHomePageState extends State<RunHomePage> {
         '    </trkseg>',
         '  </trk>',
         '</gpx>',
-      ].join('\\n');
+      ].join('\n');
       final directory = await getTemporaryDirectory();
       final file = File('${directory.path}/runtracker-${DateTime.now().millisecondsSinceEpoch}.gpx');
       await file.writeAsString(gpx, flush: true);
