@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -236,6 +237,28 @@ class _RunHomePageState extends State<RunHomePage> {
     });
   }
 
+  Future<void> exportHistoryCsv() async {
+    if (history.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Er zijn nog geen trainingen om te exporteren')),
+      );
+      return;
+    }
+    final rows = <String>[
+      'Datum;Duur_seconden;Afstand_meter;Tempo_per_km;GPS_punten',
+      ...history.map((run) {
+        final date = DateTime.tryParse(run.date)?.toLocal().toIso8601String() ?? run.date;
+        return '${date};${run.seconds};${run.meters.toStringAsFixed(1)};${paceFor(run.meters, run.seconds)};${run.coordinates.length}';
+      }),
+    ];
+    await Clipboard.setData(ClipboardData(text: rows.join('\n')));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Trainingsgegevens als CSV gekopieerd. Plak ze in Excel of Google Sheets.')),
+      );
+    }
+  }
+
   Future<void> deleteRun(RunRecord run) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -298,6 +321,12 @@ class _RunHomePageState extends State<RunHomePage> {
                 Text('RUNTRACKER', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2.1)),
                 Text('YOUR PACE. YOUR PATH.', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1.5)),
               ])),
+              if (showHistory)
+                IconButton(
+                  tooltip: 'Trainingsgegevens exporteren',
+                  onPressed: exportHistoryCsv,
+                  icon: const Icon(Icons.ios_share_rounded, color: lime),
+                ),
               IconButton(
                 tooltip: showHistory ? 'Terug naar training' : 'Trainingsgeschiedenis',
                 onPressed: () => setState(() => showHistory = !showHistory),
