@@ -16,12 +16,39 @@ jobs:
         with:
           channel: stable
           cache: true
-      - run: flutter --version
-      - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test
-      - run: flutter build apk --release
-      - run: flutter build appbundle --release
+      - name: Generate Android platform files
+        run: |
+          flutter create --platforms=android --org com.draveinx --project-name runtracker --project-dir /tmp/runtracker-scaffold
+          cp -R /tmp/runtracker-scaffold/android ./android
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/app/src/main/AndroidManifest.xml")
+          text = path.read_text()
+          permissions = """    <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+              <uses-permission android:name="android.permission.WAKE_LOCK" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          """
+          text = text.replace("<application", permissions + "    <application", 1)
+          text = text.replace('android:label="runtracker"', 'android:label="RunTracker"')
+          path.write_text(text)
+          PY
+      - name: Flutter version
+        run: flutter --version
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Tests
+        run: flutter test
+      - name: Build APK
+        run: flutter build apk --release
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
       - uses: actions/upload-artifact@v4
         with:
           name: runtracker-android-release
