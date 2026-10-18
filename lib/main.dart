@@ -455,6 +455,14 @@ class _RunHomePageState extends State<RunHomePage> {
     }).toList();
     final weeklyMeters = weeklyRuns.fold<double>(0, (sum, run) => sum + run.meters);
     final weeklySeconds = weeklyRuns.fold<int>(0, (sum, run) => sum + run.seconds);
+    final longestRun = history.isEmpty
+        ? null
+        : history.reduce((a, b) => a.meters >= b.meters ? a : b);
+    final timedRuns = history.where((run) => run.meters >= 100 && run.seconds > 0).toList();
+    final fastestRun = timedRuns.isEmpty
+        ? null
+        : timedRuns.reduce((a, b) =>
+            a.seconds / a.meters <= b.seconds / b.meters ? a : b);
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -472,6 +480,22 @@ class _RunHomePageState extends State<RunHomePage> {
                 Expanded(child: _statCard('TOTAAL', (totalMeters / 1000).toStringAsFixed(1), 'km', Icons.route_rounded)),
                 const SizedBox(width: 10),
                 Expanded(child: _statCard('TRAININGEN', history.length.toString(), 'runs', Icons.fitness_center_rounded)),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: _statCard(
+                  'LANGSTE RUN',
+                  longestRun == null ? '—' : (longestRun.meters / 1000).toStringAsFixed(2),
+                  'km',
+                  Icons.emoji_events_rounded,
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _statCard(
+                  'BESTE TEMPO',
+                  fastestRun == null ? '—' : paceFor(fastestRun.meters, fastestRun.seconds),
+                  '/km',
+                  Icons.bolt_rounded,
+                )),
               ]),
               const SizedBox(height: 10),
               Container(
