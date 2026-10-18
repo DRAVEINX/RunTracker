@@ -18,7 +18,7 @@ jobs:
           cache: true
       - name: Generate Android platform files
         run: |
-          flutter create --platforms=android --org com.draveinx --project-name runtracker --project-dir /tmp/runtracker-scaffold
+          flutter create --platforms=android --org com.draveinx --project-name runtracker /tmp/runtracker-scaffold
           rm -rf ./android
           cp -R /tmp/runtracker-scaffold/android ./android
           python3 - <<'PY'
