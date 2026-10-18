@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 void main() => runApp(const RunTrackerApp());
 
@@ -307,26 +310,35 @@ class _RunHomePageState extends State<RunHomePage> {
       );
       return;
     }
-    final points = run.coordinates.map((point) =>
-        '      <trkpt lat="${point[0]}" lon="${point[1]}"></trkpt>').join('\\n');
-    final date = DateTime.tryParse(run.date)?.toUtc().toIso8601String();
-    final gpx = [
-      '<?xml version="1.0" encoding="UTF-8"?>',
-      '<gpx version="1.1" creator="RunTracker" xmlns="http://www.topografix.com/GPX/1/1">',
-      '  <trk>',
-      '    <name>RunTracker training</name>',
-      if (date != null) '    <time>$date</time>',
-      '    <trkseg>',
-      points,
-      '    </trkseg>',
-      '  </trk>',
-      '</gpx>',
-    ].join('\\n');
-    await Clipboard.setData(ClipboardData(text: gpx));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('GPX-route gekopieerd. Plak de inhoud in een .gpx-bestand.')),
+    try {
+      final points = run.coordinates.map((point) =>
+          '      <trkpt lat="${point[0]}" lon="${point[1]}"></trkpt>').join('\\n');
+      final date = DateTime.tryParse(run.date)?.toUtc().toIso8601String();
+      final gpx = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<gpx version="1.1" creator="RunTracker" xmlns="http://www.topografix.com/GPX/1/1">',
+        '  <trk>',
+        '    <name>RunTracker training</name>',
+        if (date != null) '    <time>$date</time>',
+        '    <trkseg>',
+        points,
+        '    </trkseg>',
+        '  </trk>',
+        '</gpx>',
+      ].join('\\n');
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/runtracker-${DateTime.now().millisecondsSinceEpoch}.gpx');
+      await file.writeAsString(gpx, flush: true);
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/gpx+xml')],
+        text: 'GPS-route geëxporteerd vanuit RunTracker',
       );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('GPX exporteren is niet gelukt. Probeer het opnieuw.')),
+        );
+      }
     }
   }
 
