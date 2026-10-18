@@ -442,11 +442,27 @@ class _RunHomePageState extends State<RunHomePage> {
         ],
       ),
     );
-    if (confirmed != true) return;
-    setState(() => history.remove(run));
-    await saveHistory();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Training verwijderd')));
+    if (confirmed != true || !mounted) return;
+    final originalIndex = history.indexOf(run);
+    if (originalIndex < 0) return;
+    setState(() => history.removeAt(originalIndex));
+    try {
+      await saveHistory();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Training verwijderd')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          final restoreIndex = originalIndex.clamp(0, history.length);
+          history.insert(restoreIndex, run);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verwijderen is niet opgeslagen. De training is teruggezet in de lijst. Controleer de opslagruimte en probeer opnieuw.')),
+        );
+      }
     }
   }
 
