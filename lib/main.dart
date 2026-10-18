@@ -292,7 +292,7 @@ class _RunHomePageState extends State<RunHomePage> {
       'Datum;Duur_seconden;Afstand_meter;Tempo_per_km;GPS_punten',
       ...history.map((run) {
         final date = DateTime.tryParse(run.date)?.toLocal().toIso8601String() ?? run.date;
-        return ${date};${run.seconds};${run.meters.toStringAsFixed(1)};${paceFor(run.meters, run.seconds)};${run.coordinates.length};
+        return '${date};${run.seconds};${run.meters.toStringAsFixed(1)};${paceFor(run.meters, run.seconds)};${run.coordinates.length}';
       }),
     ];
     try {
