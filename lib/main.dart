@@ -105,9 +105,20 @@ class _RunHomePageState extends State<RunHomePage> {
       final records = (jsonDecode(value) as List<dynamic>)
           .map((e) => RunRecord.fromJson(e as Map<String, dynamic>))
           .toList();
-      if (mounted) setState(() => history.addAll(records));
+      if (mounted) {
+        setState(() {
+          history
+            ..clear()
+            ..addAll(records.take(100));
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => status = 'Geschiedenis kon niet worden geladen');
+      if (mounted) {
+        setState(() => status = 'Geschiedenis kon niet worden geladen');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Opgeslagen trainingen konden niet worden gelezen. Je bestaande gegevens zijn niet overschreven.')),
+        );
+      }
     }
   }
 
