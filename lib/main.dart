@@ -102,15 +102,54 @@ class _RunHomePageState extends State<RunHomePage> {
       if (mounted) setState(() => weeklyGoalKm = savedGoal);
       final value = prefs.getString('runtracker_history');
       if (value == null) return;
-      final records = (jsonDecode(value) as List<dynamic>)
-          .map((e) => RunRecord.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final decoded = jsonDecode(value);
+      if (decoded is! List<dynamic>) {
+        throw const FormatException('Ongeldig formaat trainingsgeschiedenis');
+      }
+      final records = <RunRecord>[];
+      var skippedRecords = 0;
+      for (final item in decoded) {
+        try {
+          if (item is! Map<String, dynamic>) {
+            skippedRecords++;
+            continue;
+          }
+          final record = RunRecord.fromJson(item);
+          final hasInvalidCoordinates = record.coordinates.any((point) =>
+              point.length < 2 ||
+              !point[0].isFinite ||
+              !point[1].isFinite ||
+              point[0] < -90 ||
+              point[0] > 90 ||
+              point[1] < -180 ||
+              point[1] > 180);
+          if (DateTime.tryParse(record.date) == null ||
+              record.seconds < 0 ||
+              !record.meters.isFinite ||
+              record.meters < 0 ||
+              hasInvalidCoordinates) {
+            skippedRecords++;
+            continue;
+          }
+          records.add(record);
+        } catch (_) {
+          skippedRecords++;
+        }
+      }
       if (mounted) {
         setState(() {
           history
             ..clear()
             ..addAll(records.take(100));
         });
+        if (skippedRecords > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$skippedRecords ongeldige training(s) overgeslagen. Andere geldige trainingen zijn geladen.'),
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
       }
     } catch (_) {
       if (mounted) {
