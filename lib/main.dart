@@ -1091,6 +1091,13 @@ class _RunHomePageState extends State<RunHomePage> {
                   const SizedBox(height: 5),
                   Text('Beweegtijd: ' + clock(weeklySeconds) + ' · Totale beweegtijd: ' + clock(totalSeconds),
                       style: const TextStyle(color: muted, fontSize: 11)),
+                  const SizedBox(height: 5),
+                  Text(
+                    weeklyMeters >= 100 && weeklySeconds > 0
+                        ? 'Gemiddeld tempo deze week: ' + paceFor(weeklyMeters, weeklySeconds) + ' /km'
+                        : 'Weektempo verschijnt zodra je een training van minstens 100 meter hebt opgeslagen.',
+                    style: const TextStyle(color: muted, fontSize: 11),
+                  ),
                 ]),
               ),
               const SizedBox(height: 10),
