@@ -124,8 +124,13 @@ class _RunHomePageState extends State<RunHomePage> {
 
   Future<void> saveHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('runtracker_history',
-        jsonEncode(history.map((e) => e.toJson()).toList()));
+    final saved = await prefs.setString(
+      'runtracker_history',
+      jsonEncode(history.map((e) => e.toJson()).toList()),
+    );
+    if (!saved) {
+      throw StateError('Trainingsgeschiedenis kon niet worden opgeslagen');
+    }
   }
 
   Future<bool> checkLocation() async {
