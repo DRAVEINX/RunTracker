@@ -537,10 +537,12 @@ class _RunHomePageState extends State<RunHomePage> {
       return;
     }
     final rows = <String>[
-      'Datum;Duur_seconden;Afstand_meter;Tempo_per_km;GPS_punten',
+      'Datum;Duur_seconden;Afstand_meter;Tempo_per_km;Gemiddelde_snelheid_km_per_uur;GPS_route;GPS_punten',
       ...history.map((run) {
         final date = DateTime.tryParse(run.date)?.toLocal().toIso8601String() ?? run.date;
-        return '${date};${run.seconds};${run.meters.toStringAsFixed(1)};${paceFor(run.meters, run.seconds)};${run.coordinates.length}';
+        final averageSpeed = run.seconds > 0 ? (run.meters / run.seconds * 3.6).toStringAsFixed(1) : '';
+        final hasRoute = run.coordinates.isEmpty ? 'nee' : 'ja';
+        return '${date};${run.seconds};${run.meters.toStringAsFixed(1)};${paceFor(run.meters, run.seconds)};${averageSpeed};${hasRoute};${run.coordinates.length}';
       }),
     ];
     try {
