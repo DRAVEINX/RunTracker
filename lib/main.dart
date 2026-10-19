@@ -210,6 +210,17 @@ class _RunHomePageState extends State<RunHomePage> {
 
   void acceptPosition(Position p) {
     if (!mounted || !running || paused) return;
+    if (!p.latitude.isFinite ||
+        !p.longitude.isFinite ||
+        p.latitude < -90 ||
+        p.latitude > 90 ||
+        p.longitude < -180 ||
+        p.longitude > 180 ||
+        !p.accuracy.isFinite ||
+        p.accuracy < 0) {
+      setState(() => status = 'Ongeldige GPS-meting genegeerd');
+      return;
+    }
     if (p.accuracy > 35) {
       setState(() => status = 'GPS-signaal zwak · nauwkeuriger locatie zoeken');
       return;
