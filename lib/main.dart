@@ -395,7 +395,11 @@ class _RunHomePageState extends State<RunHomePage> {
         });
       }
     } finally {
-      resuming = false;
+      if (mounted) {
+        setState(() => resuming = false);
+      } else {
+        resuming = false;
+      }
     }
   }
 
