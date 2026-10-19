@@ -95,6 +95,23 @@ class _RunHomePageState extends State<RunHomePage> {
     super.dispose();
   }
 
+  bool isValidRecord(RunRecord record) {
+    if (DateTime.tryParse(record.date) == null ||
+        record.seconds < 0 ||
+        !record.meters.isFinite ||
+        record.meters < 0) {
+      return false;
+    }
+    return record.coordinates.every((point) =>
+        point.length >= 2 &&
+        point[0].isFinite &&
+        point[1].isFinite &&
+        point[0] >= -90 &&
+        point[0] <= 90 &&
+        point[1] >= -180 &&
+        point[1] <= 180);
+  }
+
   Future<void> loadHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -121,19 +138,7 @@ class _RunHomePageState extends State<RunHomePage> {
             continue;
           }
           final record = RunRecord.fromJson(item);
-          final hasInvalidCoordinates = record.coordinates.any((point) =>
-              point.length < 2 ||
-              !point[0].isFinite ||
-              !point[1].isFinite ||
-              point[0] < -90 ||
-              point[0] > 90 ||
-              point[1] < -180 ||
-              point[1] > 180);
-          if (DateTime.tryParse(record.date) == null ||
-              record.seconds < 0 ||
-              !record.meters.isFinite ||
-              record.meters < 0 ||
-              hasInvalidCoordinates) {
+          if (!isValidRecord(record)) {
             skippedRecords++;
             continue;
           }
@@ -169,9 +174,16 @@ class _RunHomePageState extends State<RunHomePage> {
 
   Future<void> saveHistory() async {
     final prefs = await SharedPreferences.getInstance();
+    final validRecords = <RunRecord>[];
+    final seenRecords = <String>{};
+    for (final record in history) {
+      if (!isValidRecord(record)) continue;
+      final encoded = jsonEncode(record.toJson());
+      if (seenRecords.add(encoded)) validRecords.add(record);
+    }
     final saved = await prefs.setString(
       'runtracker_history',
-      jsonEncode(history.map((e) => e.toJson()).toList()),
+      jsonEncode(validRecords.take(100).map((e) => e.toJson()).toList()),
     );
     if (!saved) {
       throw StateError('Trainingsgeschiedenis kon niet worden opgeslagen');
