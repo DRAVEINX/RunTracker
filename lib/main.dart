@@ -790,7 +790,7 @@ class _RunHomePageState extends State<RunHomePage> {
                   const SizedBox(width: 10),
                   Expanded(child: action('AFRONDEN', Icons.stop_rounded, finishRun)),
                 ] else ...[
-                  Expanded(child: action('VERDER', Icons.play_arrow_rounded, resumeRun)),
+                  Expanded(child: action(resuming ? 'GPS HERVATTEN…' : 'VERDER', Icons.play_arrow_rounded, resumeRun, disabled: resuming)),
                   const SizedBox(width: 10),
                   Expanded(child: action('AFRONDEN', Icons.stop_rounded, finishRun, secondary: true)),
                 ],
@@ -824,9 +824,9 @@ class _RunHomePageState extends State<RunHomePage> {
         ]),
       );
 
-  Widget action(String label, IconData icon, Future<void> Function() callback, {bool secondary = false}) =>
+  Widget action(String label, IconData icon, Future<void> Function() callback, {bool secondary = false, bool disabled = false}) =>
       SizedBox(height: 54, child: FilledButton.icon(
-        onPressed: () => callback(),
+        onPressed: disabled ? null : () => callback(),
         icon: Icon(icon),
         label: Text(label, style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: .8)),
         style: FilledButton.styleFrom(
