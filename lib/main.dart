@@ -560,6 +560,31 @@ class _RunHomePageState extends State<RunHomePage> {
     }
   }
 
+  Future<void> shareRunSummary(RunRecord run) async {
+    final date = DateTime.tryParse(run.date);
+    final dateText = date == null
+        ? 'Datum onbekend'
+        : date.day.toString().padLeft(2, '0') + '-' +
+            date.month.toString().padLeft(2, '0') + '-' + date.year.toString();
+    final summary = [
+      'RunTracker - trainingssamenvatting',
+      'Datum: $dateText',
+      'Afstand: ${(run.meters / 1000).toStringAsFixed(2)} km',
+      'Tijd: ${clock(run.seconds)}',
+      'Tempo: ${paceFor(run.meters, run.seconds)} min/km',
+      'GPS-punten: ${run.coordinates.length}',
+    ].join('\\n');
+    try {
+      await Share.share(summary, subject: 'RunTracker trainingssamenvatting');
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trainingssamenvatting delen is niet gelukt. Probeer het opnieuw.')),
+        );
+      }
+    }
+  }
+
   Future<void> exportRunGpx(RunRecord run) async {
     if (run.coordinates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1123,11 +1148,13 @@ class _RunHomePageState extends State<RunHomePage> {
                 onSelected: (value) {
                   if (value == 'delete') deleteRun(run);
                   if (value == 'details') showRunDetails(run);
+                  if (value == 'summary') shareRunSummary(run);
                   if (value == 'gpx') exportRunGpx(run);
                 },
                 itemBuilder: (context) => const [
                   PopupMenuItem(value: 'details', child: Text('Details bekijken')),
-                  PopupMenuItem(value: 'gpx', child: Text('GPS-route exporteren (GPX)')),
+                  PopupMenuItem(value: 'summary', child: Text('Samenvatting delen')),
+                  PopupMenuItem(value: 'gpx', child: Text('GPS-route exporteren (GPX')),
                   PopupMenuItem(value: 'delete', child: Text('Training verwijderen')),
                 ],
               ),
