@@ -363,6 +363,10 @@ class _RunHomePageState extends State<RunHomePage> {
         acceptPosition,
         onError: (_) => handleGpsError(),
       );
+      if (!mounted || !running || !paused) {
+        await subscription.cancel();
+        return;
+      }
       gps = subscription;
       timer?.cancel();
       timer = Timer.periodic(const Duration(seconds: 1), (_) {
