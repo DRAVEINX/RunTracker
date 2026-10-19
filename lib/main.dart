@@ -570,6 +570,7 @@ class _RunHomePageState extends State<RunHomePage> {
       'RunTracker - trainingssamenvatting',
       'Datum: $dateText',
       'Afstand: ${(run.meters / 1000).toStringAsFixed(2)} km',
+      'Duur: ${clock(run.seconds)}',
       'Tijd: ${clock(run.seconds)}',
       'Tempo: ${paceFor(run.meters, run.seconds)} min/km',
       'Gemiddelde snelheid: ${run.seconds > 0 ? (run.meters / run.seconds * 3.6).toStringAsFixed(1) + ' km/u' : 'niet beschikbaar'}',
