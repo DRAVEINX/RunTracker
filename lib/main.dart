@@ -224,9 +224,7 @@ class _RunHomePageState extends State<RunHomePage> {
     });
       gps = Geolocator.getPositionStream(locationSettings: settings()).listen(
         acceptPosition,
-        onError: (_) {
-          if (mounted) setState(() => status = 'GPS tijdelijk niet beschikbaar');
-        },
+        onError: (_) => handleGpsError(),
       );
     } catch (_) {
       timer?.cancel();
@@ -245,6 +243,19 @@ class _RunHomePageState extends State<RunHomePage> {
     } finally {
       if (mounted && starting) setState(() => starting = false);
     }
+  }
+
+  void handleGpsError() {
+    if (!mounted || !running) return;
+    timer?.cancel();
+    timer = null;
+    final subscription = gps;
+    gps = null;
+    if (subscription != null) unawaited(subscription.cancel());
+    setState(() {
+      paused = true;
+      status = 'GPS niet beschikbaar. Training gepauzeerd; controleer locatie en tik op Hervatten.';
+    });
   }
 
   void acceptPosition(Position p) {
@@ -315,9 +326,7 @@ class _RunHomePageState extends State<RunHomePage> {
       });
       gps = Geolocator.getPositionStream(locationSettings: settings()).listen(
         acceptPosition,
-        onError: (_) {
-          if (mounted) setState(() => status = 'GPS tijdelijk niet beschikbaar');
-        },
+        onError: (_) => handleGpsError(),
       );
     } catch (_) {
       timer?.cancel();
