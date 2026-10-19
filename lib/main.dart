@@ -332,8 +332,8 @@ class _RunHomePageState extends State<RunHomePage> {
 
   Future<void> resumeRun() async {
     if (!running || !paused) return;
-    if (!await checkLocation()) return;
     try {
+      if (!await checkLocation()) return;
       setState(() {
         paused = false;
         status = 'GPS hervatten…';
