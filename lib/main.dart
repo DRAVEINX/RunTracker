@@ -560,29 +560,48 @@ class _RunHomePageState extends State<RunHomePage> {
     }
   }
 
-  Future<void> shareRunSummary(RunRecord run) async {
+  String runSummaryText(RunRecord run) {
     final date = DateTime.tryParse(run.date);
     final dateText = date == null
         ? 'Datum onbekend'
         : date.day.toString().padLeft(2, '0') + '-' +
             date.month.toString().padLeft(2, '0') + '-' + date.year.toString();
-    final summary = [
+    return [
       'RunTracker - trainingssamenvatting',
       'Datum: $dateText',
       'Afstand: ${(run.meters / 1000).toStringAsFixed(2)} km',
       'Duur: ${clock(run.seconds)}',
-      'Tijd: ${clock(run.seconds)}',
       'Tempo: ${paceFor(run.meters, run.seconds)} min/km',
       'Gemiddelde snelheid: ${run.seconds > 0 ? (run.meters / run.seconds * 3.6).toStringAsFixed(1) + ' km/u' : 'niet beschikbaar'}',
       'GPS-route: ${run.coordinates.isEmpty ? 'niet beschikbaar' : 'beschikbaar'}',
       'GPS-punten: ${run.coordinates.length}',
     ].join('\\n');
+  }
+
+  Future<void> shareRunSummary(RunRecord run) async {
     try {
-      await Share.share(summary, subject: 'RunTracker trainingssamenvatting');
+      await Share.share(runSummaryText(run), subject: 'RunTracker trainingssamenvatting');
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Trainingssamenvatting delen is niet gelukt. Probeer het opnieuw.')),
+        );
+      }
+    }
+  }
+
+  Future<void> copyRunSummary(RunRecord run) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: runSummaryText(run)));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trainingssamenvatting gekopieerd')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Samenvatting kopiëren is niet gelukt. Probeer het opnieuw.')),
         );
       }
     }
@@ -1152,11 +1171,13 @@ class _RunHomePageState extends State<RunHomePage> {
                   if (value == 'delete') deleteRun(run);
                   if (value == 'details') showRunDetails(run);
                   if (value == 'summary') shareRunSummary(run);
+                  if (value == 'copy_summary') copyRunSummary(run);
                   if (value == 'gpx') exportRunGpx(run);
                 },
                 itemBuilder: (context) => const [
                   PopupMenuItem(value: 'details', child: Text('Details bekijken')),
                   PopupMenuItem(value: 'summary', child: Text('Samenvatting delen')),
+                  PopupMenuItem(value: 'copy_summary', child: Text('Samenvatting kopiëren')),
                   PopupMenuItem(value: 'gpx', child: Text('GPS-route exporteren (GPX)')),
                   PopupMenuItem(value: 'delete', child: Text('Training verwijderen')),
                 ],
