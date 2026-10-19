@@ -75,6 +75,7 @@ class _RunHomePageState extends State<RunHomePage> {
   double meters = 0;
   bool running = false;
   bool starting = false;
+  bool finishing = false;
   bool resuming = false;
   bool paused = false;
   bool showHistory = false;
@@ -404,68 +405,77 @@ class _RunHomePageState extends State<RunHomePage> {
   }
 
   Future<void> finishRun() async {
-    if (!running) return;
+    if (!running || finishing) return;
     setState(() {
+      finishing = true;
       running = false;
       paused = false;
       status = 'Training afronden en opslaan…';
     });
     timer?.cancel();
     timer = null;
-    final subscription = gps;
-    gps = null;
     try {
-      await subscription?.cancel();
-    } catch (_) {
-      // A GPS cleanup error must not prevent saving the completed run.
-    }
-    final record = startedAt != null && (elapsed > 0 || meters > 0)
-        ? RunRecord(
-            startedAt!.toIso8601String(),
-            elapsed,
-            meters,
-            route.map((p) => [p.latitude, p.longitude]).toList(),
-          )
-        : null;
-    if (record != null) {
-      history.insert(0, record);
-      if (history.length > 100) history.removeRange(100, history.length);
+      final subscription = gps;
+      gps = null;
       try {
-        await saveHistory();
-        if (mounted) {
-          setState(() => status = 'Training opgeslagen op dit apparaat');
-        }
+        await subscription?.cancel();
       } catch (_) {
-        if (mounted) {
-          setState(() => status = 'Training afgerond, maar opslaan is mislukt');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Training afgerond, maar opslaan is mislukt. De training blijft voorlopig in de lijst staan.'),
-              duration: const Duration(seconds: 8),
-              action: SnackBarAction(
-                label: 'Opnieuw proberen',
-                onPressed: () async {
-                  try {
-                    await saveHistory();
-                    if (!mounted) return;
-                    setState(() => status = 'Training alsnog opgeslagen');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Training alsnog opgeslagen')),
-                    );
-                  } catch (_) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Opslaan is opnieuw mislukt. Controleer de opslagruimte en probeer het nogmaals.')),
-                    );
-                  }
-                },
-              ),
-            ),
-          );
-        }
+        // A GPS cleanup error must not prevent saving the completed run.
       }
-    } else if (mounted) {
-      setState(() => status = 'Training afgerond');
+      final record = startedAt != null && (elapsed > 0 || meters > 0)
+          ? RunRecord(
+              startedAt!.toIso8601String(),
+              elapsed,
+              meters,
+              route.map((p) => [p.latitude, p.longitude]).toList(),
+            )
+          : null;
+      if (record != null) {
+        history.insert(0, record);
+        if (history.length > 100) history.removeRange(100, history.length);
+        try {
+          await saveHistory();
+          if (mounted) {
+            setState(() => status = 'Training opgeslagen op dit apparaat');
+          }
+        } catch (_) {
+          if (mounted) {
+            setState(() => status = 'Training afgerond, maar opslaan is mislukt');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Training afgerond, maar opslaan is mislukt. De training blijft voorlopig in de lijst staan.'),
+                duration: const Duration(seconds: 8),
+                action: SnackBarAction(
+                  label: 'Opnieuw proberen',
+                  onPressed: () async {
+                    try {
+                      await saveHistory();
+                      if (!mounted) return;
+                      setState(() => status = 'Training alsnog opgeslagen');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Training alsnog opgeslagen')),
+                      );
+                    } catch (_) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Opslaan is opnieuw mislukt. Controleer de opslagruimte en probeer het nogmaals.')),
+                      );
+                    }
+                  },
+                ),
+              ),
+            );
+          }
+        }
+      } else if (mounted) {
+        setState(() => status = 'Training afgerond');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => finishing = false);
+      } else {
+        finishing = false;
+      }
     }
   }
 
@@ -788,7 +798,7 @@ class _RunHomePageState extends State<RunHomePage> {
               const SizedBox(height: 14),
               Row(children: [
                 if (!running)
-                  Expanded(child: action(starting ? 'GPS CONTROLEREN…' : 'START TRAINING', Icons.play_arrow_rounded, startRun, disabled: starting))
+                  Expanded(child: action(finishing ? 'OPSLAAN…' : (starting ? 'GPS CONTROLEREN…' : 'START TRAINING'), Icons.play_arrow_rounded, startRun, disabled: starting || finishing))
                 else if (!paused) ...[
                   Expanded(child: action('PAUZE', Icons.pause_rounded, pauseRun, secondary: true)),
                   const SizedBox(width: 10),
