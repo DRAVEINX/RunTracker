@@ -1118,6 +1118,37 @@ class _RunHomePageState extends State<RunHomePage> {
                 ]),
               ),
               const SizedBox(height: 20),
+              if (history.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: panel,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF25343B)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.insights_rounded, color: lime, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('GEMIDDELD PER TRAINING', style: TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
+                            const SizedBox(height: 4),
+                            Text(
+                              (totalMeters / history.length / 1000).toStringAsFixed(2) + ' km · ' +
+                                  clock((totalSeconds / history.length).round()) + ' gemiddelde duur',
+                              style: const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 10),
               const Text('RECENTE TRAININGEN', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.6)),
               const SizedBox(height: 10),
               Wrap(
