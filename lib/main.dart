@@ -573,6 +573,7 @@ class _RunHomePageState extends State<RunHomePage> {
       'Tijd: ${clock(run.seconds)}',
       'Tempo: ${paceFor(run.meters, run.seconds)} min/km',
       'Gemiddelde snelheid: ${run.seconds > 0 ? (run.meters / run.seconds * 3.6).toStringAsFixed(1) + ' km/u' : 'niet beschikbaar'}',
+      'GPS-route: ${run.coordinates.isEmpty ? 'niet beschikbaar' : 'beschikbaar'}',
       'GPS-punten: ${run.coordinates.length}',
     ].join('\\n');
     try {
