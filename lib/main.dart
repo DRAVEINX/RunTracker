@@ -98,7 +98,13 @@ class _RunHomePageState extends State<RunHomePage> {
   Future<void> loadHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedGoal = prefs.getDouble('runtracker_weekly_goal_km') ?? 10;
+      final storedGoal = prefs.getDouble('runtracker_weekly_goal_km');
+      final savedGoal = storedGoal != null &&
+              storedGoal.isFinite &&
+              storedGoal > 0 &&
+              storedGoal <= 500
+          ? storedGoal
+          : 10.0;
       if (mounted) setState(() => weeklyGoalKm = savedGoal);
       final value = prefs.getString('runtracker_history');
       if (value == null) return;
