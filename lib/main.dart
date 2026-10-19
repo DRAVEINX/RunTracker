@@ -406,7 +406,23 @@ class _RunHomePageState extends State<RunHomePage> {
       return;
     }
     try {
-      final points = run.coordinates.map((point) =>
+      final validCoordinates = run.coordinates.where((point) =>
+          point.length >= 2 &&
+          point[0].isFinite &&
+          point[1].isFinite &&
+          point[0] >= -90 &&
+          point[0] <= 90 &&
+          point[1] >= -180 &&
+          point[1] <= 180).toList();
+      if (validCoordinates.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Deze training bevat geen geldige GPS-punten om te exporteren')),
+          );
+        }
+        return;
+      }
+      final points = validCoordinates.map((point) =>
           '      <trkpt lat="${point[0]}" lon="${point[1]}"></trkpt>').join('\n');
       final date = DateTime.tryParse(run.date)?.toUtc().toIso8601String();
       final gpx = [
