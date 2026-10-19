@@ -90,8 +90,15 @@ class _RunHomePageState extends State<RunHomePage> {
 
   @override
   void dispose() {
-    gps?.cancel();
+    final subscription = gps;
+    gps = null;
+    if (subscription != null) {
+      unawaited(subscription.cancel().catchError((Object _) {
+        // Disposal must complete even if the GPS stream cannot cancel cleanly.
+      }));
+    }
     timer?.cancel();
+    timer = null;
     super.dispose();
   }
 
