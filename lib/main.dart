@@ -75,6 +75,7 @@ class _RunHomePageState extends State<RunHomePage> {
   double meters = 0;
   bool running = false;
   bool starting = false;
+  bool resuming = false;
   bool paused = false;
   bool showHistory = false;
   String status = 'Klaar om te gaan';
@@ -354,7 +355,8 @@ class _RunHomePageState extends State<RunHomePage> {
   }
 
   Future<void> resumeRun() async {
-    if (!running || !paused) return;
+    if (!running || !paused || resuming) return;
+    resuming = true;
     try {
       if (!await checkLocation()) return;
       final subscription = Geolocator.getPositionStream(
@@ -392,6 +394,8 @@ class _RunHomePageState extends State<RunHomePage> {
           status = 'Hervatten is niet gelukt. Probeer het opnieuw.';
         });
       }
+    } finally {
+      resuming = false;
     }
   }
 
