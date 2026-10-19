@@ -1154,7 +1154,7 @@ class _RunHomePageState extends State<RunHomePage> {
                 itemBuilder: (context) => const [
                   PopupMenuItem(value: 'details', child: Text('Details bekijken')),
                   PopupMenuItem(value: 'summary', child: Text('Samenvatting delen')),
-                  PopupMenuItem(value: 'gpx', child: Text('GPS-route exporteren (GPX')),
+                  PopupMenuItem(value: 'gpx', child: Text('GPS-route exporteren (GPX)')),
                   PopupMenuItem(value: 'delete', child: Text('Training verwijderen')),
                 ],
               ),
