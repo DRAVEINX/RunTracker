@@ -1122,6 +1122,13 @@ class _RunHomePageState extends State<RunHomePage> {
                         : 'Gemiddeld tempo verschijnt zodra je deze maand een training van minstens 100 meter hebt opgeslagen.',
                     style: const TextStyle(color: muted, fontSize: 11),
                   ),
+                  const SizedBox(height: 5),
+                  Text(
+                    monthlyMeters >= 100 && monthlySeconds > 0
+                        ? 'Gemiddelde snelheid deze maand: ' + (monthlyMeters / monthlySeconds * 3.6).toStringAsFixed(1) + ' km/u'
+                        : 'Maandgemiddelde snelheid verschijnt na een geldige training.',
+                    style: const TextStyle(color: muted, fontSize: 11),
+                  ),
                 ]),
               ),
               const SizedBox(height: 20),
