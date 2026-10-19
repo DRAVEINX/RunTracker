@@ -346,21 +346,31 @@ class _RunHomePageState extends State<RunHomePage> {
     if (!running || !paused) return;
     try {
       if (!await checkLocation()) return;
-      setState(() {
-        paused = false;
-        status = 'GPS hervatten…';
-      });
+      final subscription = Geolocator.getPositionStream(
+        locationSettings: settings(),
+      ).listen(
+        acceptPosition,
+        onError: (_) => handleGpsError(),
+      );
+      gps = subscription;
       timer?.cancel();
       timer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted && running && !paused) setState(() => elapsed++);
       });
-      gps = Geolocator.getPositionStream(locationSettings: settings()).listen(
-        acceptPosition,
-        onError: (_) => handleGpsError(),
-      );
+      setState(() {
+        paused = false;
+        status = 'GPS hervatten…';
+      });
     } catch (_) {
       timer?.cancel();
       timer = null;
+      final subscription = gps;
+      gps = null;
+      try {
+        await subscription?.cancel();
+      } catch (_) {
+        // Keep the run paused even if stream cleanup fails.
+      }
       if (mounted) {
         setState(() {
           paused = true;
