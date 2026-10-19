@@ -788,7 +788,7 @@ class _RunHomePageState extends State<RunHomePage> {
               const SizedBox(height: 14),
               Row(children: [
                 if (!running)
-                  Expanded(child: action('START TRAINING', Icons.play_arrow_rounded, startRun))
+                  Expanded(child: action(starting ? 'GPS CONTROLEREN…' : 'START TRAINING', Icons.play_arrow_rounded, startRun, disabled: starting))
                 else if (!paused) ...[
                   Expanded(child: action('PAUZE', Icons.pause_rounded, pauseRun, secondary: true)),
                   const SizedBox(width: 10),
