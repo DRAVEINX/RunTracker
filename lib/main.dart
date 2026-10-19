@@ -1016,6 +1016,27 @@ class _RunHomePageState extends State<RunHomePage> {
         ? null
         : timedRuns.reduce((a, b) =>
             a.seconds / a.meters <= b.seconds / b.meters ? a : b);
+    final trainingDays = history
+        .map((run) => DateTime.tryParse(run.date)?.toLocal())
+        .whereType<DateTime>()
+        .map((date) => DateTime(date.year, date.month, date.day))
+        .toSet();
+    final today = DateTime(now.year, now.month, now.day);
+    var streakDays = 0;
+    var streakDate = trainingDays.contains(today)
+        ? today
+        : today.subtract(const Duration(days: 1));
+    while (trainingDays.contains(streakDate)) {
+      streakDays++;
+      streakDate = streakDate.subtract(const Duration(days: 1));
+    }
+    final validSpeedRuns = history
+        .where((run) => run.meters >= 100 && run.seconds > 0)
+        .toList();
+    final averageSpeed = validSpeedRuns.isEmpty
+        ? null
+        : validSpeedRuns.fold<double>(0, (sum, run) => sum + run.meters) /
+            validSpeedRuns.fold<int>(0, (sum, run) => sum + run.seconds) * 3.6;
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -1048,6 +1069,22 @@ class _RunHomePageState extends State<RunHomePage> {
                   fastestRun == null ? '—' : paceFor(fastestRun.meters, fastestRun.seconds),
                   '/km',
                   Icons.bolt_rounded,
+                )),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: _statCard(
+                  'TRAININGSREEKS',
+                  streakDays.toString(),
+                  streakDays == 1 ? 'dag op rij' : 'dagen op rij',
+                  Icons.local_fire_department_rounded,
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _statCard(
+                  'GEM. SNELHEID',
+                  averageSpeed == null ? '—' : averageSpeed.toStringAsFixed(1),
+                  'km/u',
+                  Icons.speed_rounded,
                 )),
               ]),
               const SizedBox(height: 10),
