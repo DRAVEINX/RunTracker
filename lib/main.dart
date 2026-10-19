@@ -313,7 +313,28 @@ class _RunHomePageState extends State<RunHomePage> {
         if (mounted) {
           setState(() => status = 'Training afgerond, maar opslaan is mislukt');
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('De training is afgerond, maar kon niet worden opgeslagen. Controleer de opslagruimte en probeer opnieuw te exporteren.')),
+            SnackBar(
+              content: const Text('Training afgerond, maar opslaan is mislukt. De training blijft voorlopig in de lijst staan.'),
+              duration: const Duration(seconds: 8),
+              action: SnackBarAction(
+                label: 'Opnieuw proberen',
+                onPressed: () async {
+                  try {
+                    await saveHistory();
+                    if (!mounted) return;
+                    setState(() => status = 'Training alsnog opgeslagen');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Training alsnog opgeslagen')),
+                    );
+                  } catch (_) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Opslaan is opnieuw mislukt. Controleer de opslagruimte en probeer het nogmaals.')),
+                    );
+                  }
+                },
+              ),
+            ),
           );
         }
       }
