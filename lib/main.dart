@@ -1149,6 +1149,21 @@ class _RunHomePageState extends State<RunHomePage> {
                                   clock((totalSeconds / history.length).round()) + ' gemiddelde duur',
                               style: const TextStyle(fontWeight: FontWeight.w800),
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              history.where((run) => run.meters >= 100 && run.seconds > 0).isEmpty
+                                  ? 'Gemiddelde snelheid beschikbaar na een geldige training.'
+                                  : (history.where((run) => run.meters >= 100 && run.seconds > 0)
+                                      .fold<double>(0, (sum, run) => sum + (run.meters / 1000))
+                                      .isFinite
+                                      ? (history.where((run) => run.meters >= 100 && run.seconds > 0)
+                                              .fold<double>(0, (sum, run) => sum + run.meters) /
+                                          history.where((run) => run.meters >= 100 && run.seconds > 0)
+                                              .fold<int>(0, (sum, run) => sum + run.seconds) * 3.6)
+                                          .toStringAsFixed(1) + ' km/u gemiddelde snelheid'
+                                      : 'Gemiddelde snelheid niet beschikbaar.'),
+                              style: const TextStyle(color: muted, fontSize: 11),
+                            ),
                           ],
                         ),
                       ),
