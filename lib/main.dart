@@ -351,7 +351,11 @@ class _RunHomePageState extends State<RunHomePage> {
     timer = null;
     final subscription = gps;
     gps = null;
-    await subscription?.cancel();
+    try {
+      await subscription?.cancel();
+    } catch (_) {
+      // A GPS cleanup error must not prevent saving the completed run.
+    }
     final record = startedAt != null && (elapsed > 0 || meters > 0)
         ? RunRecord(
             startedAt!.toIso8601String(),
