@@ -284,15 +284,15 @@ class _RunHomePageState extends State<RunHomePage> {
     timer = null;
     final subscription = gps;
     gps = null;
+    setState(() {
+      paused = true;
+      status = 'GPS niet beschikbaar. Training gepauzeerd; controleer locatie en tik op Hervatten.';
+    });
     if (subscription != null) {
       unawaited(subscription.cancel().catchError((Object _) {
         // GPS stream errors must not leave tracking state inconsistent.
       }));
     }
-    setState(() {
-      paused = true;
-      status = 'GPS niet beschikbaar. Training gepauzeerd; controleer locatie en tik op Hervatten.';
-    });
   }
 
   void acceptPosition(Position p) {
