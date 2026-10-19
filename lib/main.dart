@@ -792,7 +792,7 @@ class _RunHomePageState extends State<RunHomePage> {
                 ] else ...[
                   Expanded(child: action(resuming ? 'GPS HERVATTEN…' : 'VERDER', Icons.play_arrow_rounded, resumeRun, disabled: resuming)),
                   const SizedBox(width: 10),
-                  Expanded(child: action('AFRONDEN', Icons.stop_rounded, finishRun, secondary: true)),
+                  Expanded(child: action('AFRONDEN', Icons.stop_rounded, finishRun, secondary: true, disabled: resuming)),
                 ],
               ]),
             ]),
