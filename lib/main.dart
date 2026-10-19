@@ -198,13 +198,17 @@ class _RunHomePageState extends State<RunHomePage> {
   }
 
   Future<bool> checkLocation() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!mounted) return false;
+    if (!serviceEnabled) {
       setState(() => status = 'Schakel locatie/GPS in op je telefoon');
       return false;
     }
     var permission = await Geolocator.checkPermission();
+    if (!mounted) return false;
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      if (!mounted) return false;
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
