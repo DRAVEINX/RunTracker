@@ -249,7 +249,11 @@ class _RunHomePageState extends State<RunHomePage> {
       timer = null;
       final subscription = gps;
       gps = null;
-      await subscription?.cancel();
+      try {
+        await subscription?.cancel();
+      } catch (_) {
+        // Keep resetting the run state even if GPS cleanup fails.
+      }
       if (mounted) {
         setState(() {
           running = false;
