@@ -1149,6 +1149,13 @@ class _RunHomePageState extends State<RunHomePage> {
                   ),
                 ),
               const SizedBox(height: 10),
+              if (history.isNotEmpty)
+                Text(
+                  'Gemiddeld tempo over alle trainingen: ' +
+                      paceFor(totalMeters, totalSeconds) + ' /km',
+                  style: const TextStyle(color: muted, fontSize: 11),
+                ),
+              const SizedBox(height: 10),
               const Text('RECENTE TRAININGEN', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.6)),
               const SizedBox(height: 10),
               Wrap(
