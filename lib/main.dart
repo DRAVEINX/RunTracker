@@ -1108,6 +1108,13 @@ class _RunHomePageState extends State<RunHomePage> {
                     const SizedBox(width: 10),
                     Expanded(child: _statCard('BEWEEGTIJD', clock(monthlySeconds), 'uur:min:sec', Icons.timer_rounded)),
                   ]),
+                  const SizedBox(height: 8),
+                  Text(
+                    monthlyMeters >= 100 && monthlySeconds > 0
+                        ? 'Gemiddeld tempo deze maand: ' + paceFor(monthlyMeters, monthlySeconds) + ' /km'
+                        : 'Gemiddeld tempo verschijnt zodra je deze maand een training van minstens 100 meter hebt opgeslagen.',
+                    style: const TextStyle(color: muted, fontSize: 11),
+                  ),
                 ]),
               ),
               const SizedBox(height: 20),
