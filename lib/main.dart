@@ -68,7 +68,7 @@ class RunRecord {
         (json['coordinates'] as List<dynamic>)
             .map((e) => [(e[0] as num).toDouble(), (e[1] as num).toDouble()])
             .toList(),
-        activityType: json['activityType'] as String? == 'wandelen'
+        activityType: (json['activityType'] as String?) == 'wandelen'
             ? 'wandelen'
             : 'hardlopen',
       );
