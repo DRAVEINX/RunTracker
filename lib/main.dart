@@ -36,17 +36,29 @@ class RunTrackerApp extends StatelessWidget {
 }
 
 class RunRecord {
-  const RunRecord(this.date, this.seconds, this.meters, this.coordinates);
+  const RunRecord(
+    this.date,
+    this.seconds,
+    this.meters,
+    this.coordinates, {
+    this.activityType = 'hardlopen',
+  });
+
   final String date;
   final int seconds;
   final double meters;
   final List<List<double>> coordinates;
+  final String activityType;
+
+  bool get isWalking => activityType == 'wandelen';
+  String get activityLabel => isWalking ? 'Wandelen' : 'Hardlopen';
 
   Map<String, dynamic> toJson() => {
         'date': date,
         'seconds': seconds,
         'meters': meters,
         'coordinates': coordinates,
+        'activityType': activityType,
       };
 
   factory RunRecord.fromJson(Map<String, dynamic> json) => RunRecord(
@@ -56,6 +68,9 @@ class RunRecord {
         (json['coordinates'] as List<dynamic>)
             .map((e) => [(e[0] as num).toDouble(), (e[1] as num).toDouble()])
             .toList(),
+        activityType: json['activityType'] as String? == 'wandelen'
+            ? 'wandelen'
+            : 'hardlopen',
       );
 }
 
@@ -83,6 +98,7 @@ class _RunHomePageState extends State<RunHomePage> {
   DateTime? startedAt;
   double weeklyGoalKm = 10;
   String historyFilter = 'Alles';
+  String activityType = 'hardlopen';
 
   @override
   void initState() {
@@ -428,6 +444,7 @@ class _RunHomePageState extends State<RunHomePage> {
               elapsed,
               meters,
               route.map((p) => [p.latitude, p.longitude]).toList(),
+              activityType: activityType,
             )
           : null;
       if (record != null) {
@@ -537,12 +554,12 @@ class _RunHomePageState extends State<RunHomePage> {
       return;
     }
     final rows = <String>[
-      'Datum;Duur_seconden;Afstand_meter;Tempo_per_km;Gemiddelde_snelheid_km_per_uur;GPS_route;GPS_punten',
+      'Activiteit;Datum;Duur_seconden;Afstand_meter;Tempo_per_km;Gemiddelde_snelheid_km_per_uur;GPS_route;GPS_punten',
       ...history.map((run) {
         final date = DateTime.tryParse(run.date)?.toLocal().toIso8601String() ?? run.date;
         final averageSpeed = run.seconds > 0 ? (run.meters / run.seconds * 3.6).toStringAsFixed(1) : '';
         final hasRoute = run.coordinates.isEmpty ? 'nee' : 'ja';
-        return '${date};${run.seconds};${run.meters.toStringAsFixed(1)};${paceFor(run.meters, run.seconds)};${averageSpeed};${hasRoute};${run.coordinates.length}';
+        return '${run.activityLabel};${date};${run.seconds};${run.meters.toStringAsFixed(1)};${paceFor(run.meters, run.seconds)};${averageSpeed};${hasRoute};${run.coordinates.length}';
       }),
     ];
     try {
@@ -570,6 +587,7 @@ class _RunHomePageState extends State<RunHomePage> {
             date.month.toString().padLeft(2, '0') + '-' + date.year.toString();
     return [
       'RunTracker - trainingssamenvatting',
+      'Activiteit: ${run.activityLabel}',
       'Datum: $dateText',
       'Afstand: ${(run.meters / 1000).toStringAsFixed(2)} km',
       'Duur: ${clock(run.seconds)}',
@@ -640,7 +658,7 @@ class _RunHomePageState extends State<RunHomePage> {
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<gpx version="1.1" creator="RunTracker" xmlns="http://www.topografix.com/GPX/1/1">',
         '  <trk>',
-        '    <name>RunTracker training</name>',
+        '    <name>RunTracker ${run.activityLabel.toLowerCase()}</name>',
         if (date != null) '    <time>$date</time>',
         '    <trkseg>',
         points,
@@ -828,6 +846,39 @@ class _RunHomePageState extends State<RunHomePage> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
             child: Column(children: [
+              if (!running && !starting && !finishing)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Row(children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        avatar: const Icon(Icons.directions_run_rounded, size: 18),
+                        label: const Text('Hardlopen'),
+                        selected: activityType == 'hardlopen',
+                        onSelected: (_) => setState(() => activityType = 'hardlopen'),
+                        selectedColor: lime,
+                        labelStyle: TextStyle(
+                          color: activityType == 'hardlopen' ? ink : Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ChoiceChip(
+                        avatar: const Icon(Icons.directions_walk_rounded, size: 18),
+                        label: const Text('Wandelen'),
+                        selected: activityType == 'wandelen',
+                        onSelected: (_) => setState(() => activityType = 'wandelen'),
+                        selectedColor: lime,
+                        labelStyle: TextStyle(
+                          color: activityType == 'wandelen' ? ink : Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
               Row(children: [
                 Expanded(child: metric('AFSTAND', (meters / 1000).toStringAsFixed(2), 'KM')),
                 Container(width: 1, height: 60, color: const Color(0xFF25343B)),
@@ -847,7 +898,7 @@ class _RunHomePageState extends State<RunHomePage> {
               const SizedBox(height: 14),
               Row(children: [
                 if (!running)
-                  Expanded(child: action(finishing ? 'OPSLAAN…' : (starting ? 'GPS CONTROLEREN…' : 'START TRAINING'), Icons.play_arrow_rounded, startRun, disabled: starting || finishing))
+                  Expanded(child: action(finishing ? 'OPSLAAN…' : (starting ? 'GPS CONTROLEREN…' : (activityType == 'wandelen' ? 'START WANDELING' : 'START HARDLOPEN')), Icons.play_arrow_rounded, startRun, disabled: starting || finishing))
                 else if (!paused) ...[
                   Expanded(child: action('PAUZE', Icons.pause_rounded, pauseRun, secondary: true)),
                   const SizedBox(width: 10),
@@ -927,7 +978,7 @@ class _RunHomePageState extends State<RunHomePage> {
             padding: const EdgeInsets.all(18),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Expanded(child: Text('TRAININGDETAILS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
+                Expanded(child: Text(run.activityLabel.toUpperCase() + ' · DETAILS', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
                 IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
               ]),
               const SizedBox(height: 12),
@@ -971,11 +1022,11 @@ class _RunHomePageState extends State<RunHomePage> {
   Widget historyView() {
     if (history.isEmpty) {
       return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.directions_run_rounded, color: lime, size: 44),
+        Icon(Icons.route_rounded, color: lime, size: 44),
         SizedBox(height: 12),
-        Text('Nog geen trainingen', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        Text('Nog geen activiteiten', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
         SizedBox(height: 6),
-        Text('Je opgeslagen runs verschijnen hier.', style: TextStyle(color: muted)),
+        Text('Je opgeslagen hardloopsessies en wandelroutes verschijnen hier.', style: TextStyle(color: muted)),
       ]));
     }
     final now = DateTime.now();
@@ -1286,10 +1337,10 @@ class _RunHomePageState extends State<RunHomePage> {
               decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
               child: Row(children: [
               Container(width: 42, height: 42, decoration: BoxDecoration(color: lime.withValues(alpha: .12), borderRadius: BorderRadius.circular(13)),
-                  child: const Icon(Icons.directions_run_rounded, color: lime)),
+                  child: Icon(run.isWalking ? Icons.directions_walk_rounded : Icons.directions_run_rounded, color: lime)),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(dateText, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(run.activityLabel + ' · ' + dateText, style: const TextStyle(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
                 Text(clock(run.seconds) + ' · ' + run.coordinates.length.toString() + ' GPS-punten',
                     style: const TextStyle(color: muted, fontSize: 11)),
