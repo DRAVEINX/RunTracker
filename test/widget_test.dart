@@ -11,10 +11,15 @@ void main() {
     expect(find.text('TEMPO'), findsOneWidget);
     expect(find.text('Hardlopen'), findsOneWidget);
     expect(find.text('Wandelen'), findsOneWidget);
+    expect(find.text('Fietsen'), findsOneWidget);
     expect(find.text('START HARDLOPEN'), findsOneWidget);
 
     await tester.tap(find.text('Wandelen'));
     await tester.pumpAndSettle();
     expect(find.text('START WANDELING'), findsOneWidget);
+
+    await tester.tap(find.text('Fietsen'));
+    await tester.pumpAndSettle();
+    expect(find.text('START FIETSTOCHT'), findsOneWidget);
   });
 }
