@@ -183,6 +183,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
           // Fitness history should never block loading existing GPS activities.
         }
       }
+      if (mounted) setState(() {});
       final value = prefs.getString('runtracker_history');
       if (value == null) return;
       final decoded = jsonDecode(value);
