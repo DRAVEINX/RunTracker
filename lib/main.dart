@@ -78,6 +78,21 @@ class RunRecord {
       );
 }
 
+class FitnessRecord {
+  const FitnessRecord({required this.date, required this.exercise, required this.sets, required this.reps, required this.weightKg, this.notes = ''});
+  final String date;
+  final String exercise;
+  final int sets;
+  final int reps;
+  final double weightKg;
+  final String notes;
+  Map<String, dynamic> toJson() => {'date': date, 'exercise': exercise, 'sets': sets, 'reps': reps, 'weightKg': weightKg, 'notes': notes};
+  factory FitnessRecord.fromJson(Map<String, dynamic> json) => FitnessRecord(
+    date: json['date'] as String, exercise: json['exercise'] as String, sets: json['sets'] as int,
+    reps: json['reps'] as int, weightKg: (json['weightKg'] as num).toDouble(), notes: json['notes'] as String? ?? '',
+  );
+}
+
 class PulsoraHomePage extends StatefulWidget {
   const PulsoraHomePage({super.key});
   @override
@@ -98,6 +113,8 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
   bool resuming = false;
   bool paused = false;
   bool showHistory = false;
+  bool showFitness = false;
+  final List<FitnessRecord> fitnessHistory = [];
   String status = 'Klaar om te gaan';
   DateTime? startedAt;
   double weeklyGoalKm = 10;
@@ -152,6 +169,20 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
           ? storedGoal
           : 10.0;
       if (mounted) setState(() => weeklyGoalKm = savedGoal);
+      final fitnessValue = prefs.getString('pulsora_fitness_history');
+      if (fitnessValue != null) {
+        try {
+          final decodedFitness = jsonDecode(fitnessValue);
+          if (decodedFitness is List<dynamic>) {
+            fitnessHistory
+              ..clear()
+              ..addAll(decodedFitness.whereType<Map<String, dynamic>>().map(FitnessRecord.fromJson)
+                .where((r) => r.exercise.trim().isNotEmpty && r.sets > 0 && r.reps > 0 && r.weightKg.isFinite && r.weightKg >= 0).take(300));
+          }
+        } catch (_) {
+          // Fitness history should never block loading existing GPS activities.
+        }
+      }
       final value = prefs.getString('runtracker_history');
       if (value == null) return;
       final decoded = jsonDecode(value);
@@ -501,6 +532,142 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
   }
 
 
+  Future<void> saveFitnessHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = await prefs.setString('pulsora_fitness_history', jsonEncode(fitnessHistory.take(300).map((r) => r.toJson()).toList()));
+    if (!saved) throw StateError('Fitnessgeschiedenis kon niet worden opgeslagen');
+  }
+
+  Future<void> addFitnessRecord() async {
+    final exercise = TextEditingController();
+    final sets = TextEditingController(text: '3');
+    final reps = TextEditingController(text: '10');
+    final weight = TextEditingController(text: '0');
+    final notes = TextEditingController();
+    final record = await showDialog<FitnessRecord>(context: context, builder: (ctx) => AlertDialog(
+      backgroundColor: panel,
+      title: const Text('Training vastleggen'),
+      content: SizedBox(width: 420, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        TextField(controller: exercise, autofocus: true, decoration: const InputDecoration(labelText: 'Oefening', hintText: 'Bijv. leg press')),
+        Row(children: [
+          Expanded(child: TextField(controller: sets, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Sets'))),
+          const SizedBox(width: 12),
+          Expanded(child: TextField(controller: reps, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Herhalingen'))),
+        ]),
+        TextField(controller: weight, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Gewicht in kg', helperText: '0 = lichaamsgewicht of geen extra gewicht')),
+        TextField(controller: notes, maxLines: 2, decoration: const InputDecoration(labelText: 'Notitie (optioneel)')),
+      ]))),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuleren')),
+        FilledButton(onPressed: () {
+          final name = exercise.text.trim();
+          final setCount = int.tryParse(sets.text.trim());
+          final repCount = int.tryParse(reps.text.trim());
+          final kg = double.tryParse(weight.text.trim().replaceAll(',', '.'));
+          if (name.isEmpty || setCount == null || setCount < 1 || setCount > 100 ||
+              repCount == null || repCount < 1 || repCount > 1000 ||
+              kg == null || !kg.isFinite || kg < 0 || kg > 2000) {
+            ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Controleer oefening, sets, herhalingen en gewicht.')));
+            return;
+          }
+          Navigator.pop(ctx, FitnessRecord(date: DateTime.now().toIso8601String(), exercise: name,
+            sets: setCount, reps: repCount, weightKg: kg, notes: notes.text.trim()));
+        }, child: const Text('Training opslaan')),
+      ],
+    ));
+    exercise.dispose(); sets.dispose(); reps.dispose(); weight.dispose(); notes.dispose();
+    if (record == null || !mounted) return;
+    setState(() => fitnessHistory.insert(0, record));
+    if (fitnessHistory.length > 300) fitnessHistory.removeRange(300, fitnessHistory.length);
+    try {
+      await saveFitnessHistory();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitnesstraining opgeslagen')));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => fitnessHistory.remove(record));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opslaan is niet gelukt. Controleer de opslagruimte en probeer opnieuw.')));
+    }
+  }
+
+  Future<void> deleteFitnessRecord(FitnessRecord record) async {
+    final index = fitnessHistory.indexOf(record);
+    if (index < 0) return;
+    setState(() => fitnessHistory.removeAt(index));
+    try { await saveFitnessHistory(); } catch (_) {
+      if (!mounted) return;
+      setState(() => fitnessHistory.insert(index.clamp(0, fitnessHistory.length), record));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verwijderen is niet opgeslagen; de training is teruggezet.')));
+    }
+  }
+
+  Widget fitnessView() {
+    final totalVolume = fitnessHistory.fold<double>(0, (sum, r) => sum + r.sets * r.reps * r.weightKg);
+    final exercises = fitnessHistory.map((r) => r.exercise.toLowerCase()).toSet().length;
+    return ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 28), children: [
+      Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xFF263654), Color(0xFF1A2238), Color(0xFF352B58)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(28), border: Border.all(color: Colors.white.withValues(alpha: .08))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('STRENGTH STUDIO', style: TextStyle(color: lime, fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          const Text('Elke herhaling telt.', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900, height: 1.1)),
+          const SizedBox(height: 8),
+          const Text('Leg sets, herhalingen en gewicht vast. Bekijk later wat je eerder hebt gedaan.', style: TextStyle(color: Color(0xFFD0D8E8), height: 1.4)),
+          const SizedBox(height: 18),
+          SizedBox(width: double.infinity, child: FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: lime, foregroundColor: ink, padding: const EdgeInsets.symmetric(vertical: 15)),
+            onPressed: addFitnessRecord, icon: const Icon(Icons.add_rounded),
+            label: const Text('Training toevoegen', style: TextStyle(fontWeight: FontWeight.w900)))),
+        ])),
+      const SizedBox(height: 16),
+      Row(children: [
+        Expanded(child: _statCard('LOGBOEK', '\${fitnessHistory.length}', 'registraties', Icons.fitness_center_rounded)),
+        const SizedBox(width: 10),
+        Expanded(child: _statCard('OEFENINGEN', '\$exercises', 'verschillend', Icons.bolt_rounded)),
+      ]),
+      const SizedBox(height: 10),
+      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
+        child: Row(children: [
+          Container(width: 44, height: 44, decoration: BoxDecoration(color: violet.withValues(alpha: .16), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.insights_rounded, color: violet)),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('TOTAAL VOLUME', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1.4, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text('\${totalVolume.toStringAsFixed(0)} kg · sets × herhalingen × gewicht', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+          ])),
+        ])),
+      const SizedBox(height: 24),
+      const Text('JOUW FITNESSLOGBOEK', style: TextStyle(color: muted, fontSize: 11, letterSpacing: 1.6, fontWeight: FontWeight.w900)),
+      const SizedBox(height: 10),
+      if (fitnessHistory.isEmpty)
+        Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
+          child: const Column(children: [
+            Icon(Icons.sports_gymnastics_rounded, color: violet, size: 42), SizedBox(height: 12),
+            Text('Je eerste training begint hier', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)), SizedBox(height: 6),
+            Text('Voeg een oefening toe en bekijk later gewicht, sets en herhalingen.', textAlign: TextAlign.center, style: TextStyle(color: muted, height: 1.4)),
+          ]))
+      else
+        ...fitnessHistory.map((r) {
+          final date = DateTime.tryParse(r.date)?.toLocal();
+          final dateText = date == null ? 'Datum onbekend' : '\${date.day.toString().padLeft(2, '0')}-\${date.month.toString().padLeft(2, '0')}-\${date.year} · \${date.hour.toString().padLeft(2, '0')}:\${date.minute.toString().padLeft(2, '0')}';
+          return Padding(padding: const EdgeInsets.only(bottom: 10), child: Container(
+            padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(width: 44, height: 44, decoration: BoxDecoration(color: violet.withValues(alpha: .15), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.fitness_center_rounded, color: violet)),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(r.exercise, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 4),
+                Text('\$dateText\n\${r.sets} sets × \${r.reps} herhalingen · \${r.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: muted, height: 1.45, fontSize: 12)),
+                if (r.notes.isNotEmpty) ...[const SizedBox(height: 6), Text(r.notes, style: const TextStyle(color: Color(0xFFD0D8E8), fontSize: 12))],
+              ])),
+              IconButton(tooltip: 'Training verwijderen', onPressed: () => deleteFitnessRecord(r), icon: const Icon(Icons.delete_outline_rounded, color: muted)),
+            ])),
+          );
+        }),
+    ]);
+  }
+
   Future<void> editWeeklyGoal() async {
     final controller = TextEditingController(text: weeklyGoalKm.toStringAsFixed(1));
     final value = await showDialog<double>(
@@ -763,11 +930,17 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
               Text('MOVE WITH PURPOSE', style: TextStyle(color: muted, fontSize: 9, letterSpacing: 1.7, fontWeight: FontWeight.w800)),
             ])),
             if (showHistory) IconButton(tooltip: 'Trainingsgegevens exporteren', onPressed: exportHistoryCsv, icon: const Icon(Icons.ios_share_rounded, color: lime)),
-            IconButton(tooltip: 'Trainingsgeschiedenis', onPressed: () => setState(() => showHistory = !showHistory),
+            IconButton(tooltip: showFitness ? 'Terug naar sporten' : 'Fitnesslogboek',
+              onPressed: () => setState(() { showFitness = !showFitness; showHistory = false; }),
+              style: IconButton.styleFrom(backgroundColor: showFitness ? violet.withValues(alpha: .18) : panel),
+              icon: Icon(Icons.fitness_center_rounded, color: showFitness ? violet : muted)),
+            const SizedBox(width: 4),
+            IconButton(tooltip: showHistory ? 'Terug naar sporten' : 'Trainingsgeschiedenis',
+              onPressed: () => setState(() { showHistory = !showHistory; showFitness = false; }),
               style: IconButton.styleFrom(backgroundColor: showHistory ? lime.withValues(alpha: .16) : panel),
               icon: Icon(showHistory ? Icons.close_rounded : Icons.history_rounded, color: showHistory ? lime : muted)),
           ])),
-          Expanded(child: showHistory ? historyView() : runView(center)),
+          Expanded(child: showFitness ? fitnessView() : (showHistory ? historyView() : runView(center))),
         ]),
       ),
     );
