@@ -18,7 +18,7 @@ jobs:
           cache: true
       - name: Generate Android platform files
         run: |
-          flutter create --platforms=android --org com.draveinx --project-name pulsora /tmp/pulsora-scaffold
+          flutter create --platforms=android --org com.draveinx --project-name runtracker /tmp/pulsora-scaffold
           rm -rf ./android
           cp -R /tmp/pulsora-scaffold/android ./android
           python3 - <<'PY'
