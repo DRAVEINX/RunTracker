@@ -621,7 +621,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
         ])),
       const SizedBox(height: 16),
       Row(children: [
-        Expanded(child: _statCard('LOGBOEK', '\${fitnessHistory.length}', 'registraties', Icons.fitness_center_rounded)),
+        Expanded(child: _statCard('LOGBOEK', '${fitnessHistory.length}', 'registraties', Icons.fitness_center_rounded)),
         const SizedBox(width: 10),
         Expanded(child: _statCard('OEFENINGEN', '\$exercises', 'verschillend', Icons.bolt_rounded)),
       ]),
@@ -633,7 +633,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('TOTAAL VOLUME', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1.4, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
-            Text('\${totalVolume.toStringAsFixed(0)} kg · sets × herhalingen × gewicht', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+            Text('${totalVolume.toStringAsFixed(0)} kg · sets × herhalingen × gewicht', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
           ])),
         ])),
       const SizedBox(height: 24),
@@ -649,7 +649,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
       else
         ...fitnessHistory.map((r) {
           final date = DateTime.tryParse(r.date)?.toLocal();
-          final dateText = date == null ? 'Datum onbekend' : '\${date.day.toString().padLeft(2, '0')}-\${date.month.toString().padLeft(2, '0')}-\${date.year} · \${date.hour.toString().padLeft(2, '0')}:\${date.minute.toString().padLeft(2, '0')}';
+          final dateText = date == null ? 'Datum onbekend' : '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year} · ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
           return Padding(padding: const EdgeInsets.only(bottom: 10), child: Container(
             padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -658,7 +658,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(r.exercise, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                Text('\$dateText\n\${r.sets} sets × \${r.reps} herhalingen · \${r.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: muted, height: 1.45, fontSize: 12)),
+                Text('\$dateText\n${r.sets} sets × ${r.reps} herhalingen · ${r.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: muted, height: 1.45, fontSize: 12)),
                 if (r.notes.isNotEmpty) ...[const SizedBox(height: 6), Text(r.notes, style: const TextStyle(color: Color(0xFFD0D8E8), fontSize: 12))],
               ])),
               IconButton(tooltip: 'Training verwijderen', onPressed: () => deleteFitnessRecord(r), icon: const Icon(Icons.delete_outline_rounded, color: muted)),
