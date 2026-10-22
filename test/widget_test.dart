@@ -14,6 +14,7 @@ void main() {
     expect(find.text('Fietsen'), findsOneWidget);
     expect(find.text('START HARDLOPEN'), findsOneWidget);
     expect(find.text('MOVE WITH PURPOSE'), findsOneWidget);
+    expect(find.byTooltip('Fitnesslogboek'), findsOneWidget);
 
     await tester.tap(find.text('Wandelen'));
     await tester.pumpAndSettle();
