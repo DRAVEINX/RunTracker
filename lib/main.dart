@@ -1088,6 +1088,22 @@ class _RunHomePageState extends State<RunHomePage> {
                 )),
               ]),
               const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: _statCard(
+                  'ACTIEVE DAGEN',
+                  trainingDays.length.toString(),
+                  trainingDays.length == 1 ? 'dag met training' : 'dagen met training',
+                  Icons.event_available_rounded,
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _statCard(
+                  'TOTALE BEWEEGTIJD',
+                  clock(totalSeconds),
+                  'uur:min:sec',
+                  Icons.timer_rounded,
+                )),
+              ]),
+              const SizedBox(height: 10),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
