@@ -11,19 +11,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-void main() => runApp(const RunTrackerApp());
+void main() => runApp(const PulsoraApp());
 
-const ink = Color(0xFF0A1014);
-const panel = Color(0xFF131D23);
-const lime = Color(0xFFC7F36B);
-const muted = Color(0xFF8FA1A8);
+const ink = Color(0xFF080D18);
+const panel = Color(0xFF141C2D);
+const lime = Color(0xFFB7F56A);
+const muted = Color(0xFF9BA8BC);
+const violet = Color(0xFF9D8CFF);
 
-class RunTrackerApp extends StatelessWidget {
-  const RunTrackerApp({super.key});
+class PulsoraApp extends StatelessWidget {
+  const PulsoraApp({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'RunTracker',
+        title: 'PULSORA',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
@@ -31,7 +32,7 @@ class RunTrackerApp extends StatelessWidget {
           scaffoldBackgroundColor: ink,
           colorScheme: const ColorScheme.dark(primary: lime, surface: panel),
         ),
-        home: const RunHomePage(),
+        home: const PulsoraHomePage(),
       );
 }
 
@@ -77,13 +78,13 @@ class RunRecord {
       );
 }
 
-class RunHomePage extends StatefulWidget {
-  const RunHomePage({super.key});
+class PulsoraHomePage extends StatefulWidget {
+  const PulsoraHomePage({super.key});
   @override
-  State<RunHomePage> createState() => _RunHomePageState();
+  State<PulsoraHomePage> createState() => _PulsoraHomePageState();
 }
 
-class _RunHomePageState extends State<RunHomePage> {
+class _PulsoraHomePageState extends State<PulsoraHomePage> {
   final MapController mapController = MapController();
   final List<LatLng> route = [];
   final List<RunRecord> history = [];
@@ -244,7 +245,7 @@ class _RunHomePageState extends State<RunHomePage> {
         distanceFilter: 5,
         intervalDuration: Duration(seconds: 2),
         foregroundNotificationConfig: ForegroundNotificationConfig(
-          notificationTitle: 'RunTracker is actief',
+          notificationTitle: 'PULSORA is actief',
           notificationText: 'Je training wordt vastgelegd.',
           enableWakeLock: true,
         ),
@@ -567,11 +568,11 @@ class _RunHomePageState extends State<RunHomePage> {
     ];
     try {
       final directory = await getTemporaryDirectory();
-      final file = File(directory.path + '/runtracker-trainingen-' + DateTime.now().millisecondsSinceEpoch.toString() + '.csv');
+      final file = File(directory.path + '/pulsora-trainingen-' + DateTime.now().millisecondsSinceEpoch.toString() + '.csv');
       await file.writeAsString('\uFEFF' + rows.join('\n'), flush: true);
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'text/csv')],
-        text: 'Trainingsgeschiedenis geëxporteerd vanuit RunTracker',
+        text: 'Trainingsgeschiedenis geëxporteerd vanuit PULSORA',
       );
     } catch (_) {
       if (mounted) {
@@ -589,7 +590,7 @@ class _RunHomePageState extends State<RunHomePage> {
         : date.day.toString().padLeft(2, '0') + '-' +
             date.month.toString().padLeft(2, '0') + '-' + date.year.toString();
     return [
-      'RunTracker - trainingssamenvatting',
+      'PULSORA - trainingssamenvatting',
       'Activiteit: ${run.activityLabel}',
       'Datum: $dateText',
       'Afstand: ${(run.meters / 1000).toStringAsFixed(2)} km',
@@ -603,7 +604,7 @@ class _RunHomePageState extends State<RunHomePage> {
 
   Future<void> shareRunSummary(RunRecord run) async {
     try {
-      await Share.share(runSummaryText(run), subject: 'RunTracker trainingssamenvatting');
+      await Share.share(runSummaryText(run), subject: 'PULSORA trainingssamenvatting');
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -659,9 +660,9 @@ class _RunHomePageState extends State<RunHomePage> {
       final date = DateTime.tryParse(run.date)?.toUtc().toIso8601String();
       final gpx = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<gpx version="1.1" creator="RunTracker" xmlns="http://www.topografix.com/GPX/1/1">',
+        '<gpx version="1.1" creator="PULSORA" xmlns="http://www.topografix.com/GPX/1/1">',
         '  <trk>',
-        '    <name>RunTracker ${run.activityLabel.toLowerCase()}</name>',
+        '    <name>PULSORA ${run.activityLabel.toLowerCase()}</name>',
         if (date != null) '    <time>$date</time>',
         '    <trkseg>',
         points,
@@ -670,11 +671,11 @@ class _RunHomePageState extends State<RunHomePage> {
         '</gpx>',
       ].join('\n');
       final directory = await getTemporaryDirectory();
-      final file = File('${directory.path}/runtracker-${DateTime.now().millisecondsSinceEpoch}.gpx');
+      final file = File('${directory.path}/pulsora-${DateTime.now().millisecondsSinceEpoch}.gpx');
       await file.writeAsString(gpx, flush: true);
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'application/gpx+xml')],
-        text: 'GPS-route geëxporteerd vanuit RunTracker',
+        text: 'GPS-route geëxporteerd vanuit PULSORA',
       );
     } catch (_) {
       if (mounted) {
@@ -750,32 +751,22 @@ class _RunHomePageState extends State<RunHomePage> {
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-            child: Row(children: [
-              Container(
-                width: 42, height: 42,
-                decoration: BoxDecoration(color: lime, borderRadius: BorderRadius.circular(14)),
-                child: const Icon(Icons.route_rounded, color: ink, size: 25),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('RUNTRACKER', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2.1)),
-                Text('YOUR PACE. YOUR PATH.', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1.5)),
-              ])),
-              if (showHistory)
-                IconButton(
-                  tooltip: 'Trainingsgegevens exporteren',
-                  onPressed: exportHistoryCsv,
-                  icon: const Icon(Icons.ios_share_rounded, color: lime),
-                ),
-              IconButton(
-                tooltip: showHistory ? 'Terug naar training' : 'Trainingsgeschiedenis',
-                onPressed: () => setState(() => showHistory = !showHistory),
-                icon: Icon(showHistory ? Icons.close_rounded : Icons.history_rounded, color: lime),
-              ),
-            ]),
-          ),
+          Padding(padding: const EdgeInsets.fromLTRB(18, 16, 18, 12), child: Row(children: [
+            Container(width: 48, height: 48, decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [lime, Color(0xFF8BE5C2)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(17),
+              boxShadow: [BoxShadow(color: lime.withValues(alpha: .16), blurRadius: 18, offset: const Offset(0, 5))]),
+              child: const Icon(Icons.bolt_rounded, color: ink, size: 29)),
+            const SizedBox(width: 12),
+            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('PULSORA', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 2.3)),
+              Text('MOVE WITH PURPOSE', style: TextStyle(color: muted, fontSize: 9, letterSpacing: 1.7, fontWeight: FontWeight.w800)),
+            ])),
+            if (showHistory) IconButton(tooltip: 'Trainingsgegevens exporteren', onPressed: exportHistoryCsv, icon: const Icon(Icons.ios_share_rounded, color: lime)),
+            IconButton(tooltip: 'Trainingsgeschiedenis', onPressed: () => setState(() => showHistory = !showHistory),
+              style: IconButton.styleFrom(backgroundColor: showHistory ? lime.withValues(alpha: .16) : panel),
+              icon: Icon(showHistory ? Icons.close_rounded : Icons.history_rounded, color: showHistory ? lime : muted)),
+          ])),
           Expanded(child: showHistory ? historyView() : runView(center)),
         ]),
       ),
