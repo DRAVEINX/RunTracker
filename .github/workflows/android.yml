@@ -18,9 +18,9 @@ jobs:
           cache: true
       - name: Generate Android platform files
         run: |
-          flutter create --platforms=android --org com.draveinx --project-name runtracker /tmp/runtracker-scaffold
+          flutter create --platforms=android --org com.draveinx --project-name pulsora /tmp/pulsora-scaffold
           rm -rf ./android
-          cp -R /tmp/runtracker-scaffold/android ./android
+          cp -R /tmp/pulsora-scaffold/android ./android
           python3 - <<'PY'
           from pathlib import Path
           path = Path("android/app/src/main/AndroidManifest.xml")
@@ -35,7 +35,7 @@ jobs:
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
           """
           text = text.replace("<application", permissions + "    <application", 1)
-          text = text.replace('android:label="runtracker"', 'android:label="RunTracker"')
+          text = text.replace('android:label="PULSORA"', 'android:label="RunTracker"')
           path.write_text(text)
           PY
       - name: Flutter version
@@ -52,7 +52,7 @@ jobs:
         run: flutter build appbundle --release
       - uses: actions/upload-artifact@v4
         with:
-          name: runtracker-android-release
+          name: pulsora-android-release
           path: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
