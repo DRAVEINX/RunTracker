@@ -624,7 +624,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
       Row(children: [
         Expanded(child: _statCard('LOGBOEK', '${fitnessHistory.length}', 'registraties', Icons.fitness_center_rounded)),
         const SizedBox(width: 10),
-        Expanded(child: _statCard('OEFENINGEN', '\$exercises', 'verschillend', Icons.bolt_rounded)),
+        Expanded(child: _statCard('OEFENINGEN', '$exercises', 'verschillend', Icons.bolt_rounded)),
       ]),
       const SizedBox(height: 10),
       Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
@@ -659,7 +659,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(r.exercise, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                Text('\$dateText\n${r.sets} sets × ${r.reps} herhalingen · ${r.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: muted, height: 1.45, fontSize: 12)),
+                Text('$dateText\n${r.sets} sets × ${r.reps} herhalingen · ${r.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: muted, height: 1.45, fontSize: 12)),
                 if (r.notes.isNotEmpty) ...[const SizedBox(height: 6), Text(r.notes, style: const TextStyle(color: Color(0xFFD0D8E8), fontSize: 12))],
               ])),
               IconButton(tooltip: 'Training verwijderen', onPressed: () => deleteFitnessRecord(r), icon: const Icon(Icons.delete_outline_rounded, color: muted)),
