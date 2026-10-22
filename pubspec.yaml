@@ -1,5 +1,5 @@
-name: runtracker
-description: Premium GPS running tracker for Android with Wear OS integration planned.
+name: pulsora
+description: Modern sport tracker for GPS activities and gym training logs on Android.
 publish_to: "none"
 version: 0.1.0+1
 environment:
