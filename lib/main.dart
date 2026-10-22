@@ -51,7 +51,9 @@ class RunRecord {
   final String activityType;
 
   bool get isWalking => activityType == 'wandelen';
-  String get activityLabel => isWalking ? 'Wandelen' : 'Hardlopen';
+  bool get isCycling => activityType == 'fietsen';
+  String get activityLabel =>
+      isWalking ? 'Wandelen' : (isCycling ? 'Fietsen' : 'Hardlopen');
 
   Map<String, dynamic> toJson() => {
         'date': date,
@@ -68,8 +70,9 @@ class RunRecord {
         (json['coordinates'] as List<dynamic>)
             .map((e) => [(e[0] as num).toDouble(), (e[1] as num).toDouble()])
             .toList(),
-        activityType: (json['activityType'] as String?) == 'wandelen'
-            ? 'wandelen'
+        activityType: ['hardlopen', 'wandelen', 'fietsen']
+                .contains(json['activityType'] as String?)
+            ? json['activityType'] as String
             : 'hardlopen',
       );
 }
@@ -849,9 +852,11 @@ class _RunHomePageState extends State<RunHomePage> {
               if (!running && !starting && !finishing)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 14),
-                  child: Row(children: [
-                    Expanded(
-                      child: ChoiceChip(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ChoiceChip(
                         avatar: const Icon(Icons.directions_run_rounded, size: 18),
                         label: const Text('Hardlopen'),
                         selected: activityType == 'hardlopen',
@@ -862,10 +867,7 @@ class _RunHomePageState extends State<RunHomePage> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ChoiceChip(
+                      ChoiceChip(
                         avatar: const Icon(Icons.directions_walk_rounded, size: 18),
                         label: const Text('Wandelen'),
                         selected: activityType == 'wandelen',
@@ -876,9 +878,21 @@ class _RunHomePageState extends State<RunHomePage> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                  ]),
+                      ChoiceChip(
+                        avatar: const Icon(Icons.directions_bike_rounded, size: 18),
+                        label: const Text('Fietsen'),
+                        selected: activityType == 'fietsen',
+                        onSelected: (_) => setState(() => activityType = 'fietsen'),
+                        selectedColor: lime,
+                        labelStyle: TextStyle(
+                          color: activityType == 'fietsen' ? ink : Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+
               Row(children: [
                 Expanded(child: metric('AFSTAND', (meters / 1000).toStringAsFixed(2), 'KM')),
                 Container(width: 1, height: 60, color: const Color(0xFF25343B)),
@@ -898,7 +912,7 @@ class _RunHomePageState extends State<RunHomePage> {
               const SizedBox(height: 14),
               Row(children: [
                 if (!running)
-                  Expanded(child: action(finishing ? 'OPSLAAN…' : (starting ? 'GPS CONTROLEREN…' : (activityType == 'wandelen' ? 'START WANDELING' : 'START HARDLOPEN')), Icons.play_arrow_rounded, startRun, disabled: starting || finishing))
+                  Expanded(child: action(finishing ? 'OPSLAAN…' : (starting ? 'GPS CONTROLEREN…' : (activityType == 'wandelen' ? 'START WANDELING' : (activityType == 'fietsen' ? 'START FIETSTOCHT' : 'START HARDLOPEN'))), Icons.play_arrow_rounded, startRun, disabled: starting || finishing))
                 else if (!paused) ...[
                   Expanded(child: action('PAUZE', Icons.pause_rounded, pauseRun, secondary: true)),
                   const SizedBox(width: 10),
@@ -1337,7 +1351,7 @@ class _RunHomePageState extends State<RunHomePage> {
               decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF25343B))),
               child: Row(children: [
               Container(width: 42, height: 42, decoration: BoxDecoration(color: lime.withValues(alpha: .12), borderRadius: BorderRadius.circular(13)),
-                  child: Icon(run.isWalking ? Icons.directions_walk_rounded : Icons.directions_run_rounded, color: lime)),
+                  child: Icon(run.isWalking ? Icons.directions_walk_rounded : (run.isCycling ? Icons.directions_bike_rounded : Icons.directions_run_rounded), color: lime)),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(run.activityLabel + ' · ' + dateText, style: const TextStyle(fontWeight: FontWeight.w800)),
