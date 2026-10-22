@@ -980,6 +980,7 @@ class _RunHomePageState extends State<RunHomePage> {
   void showRunDetails(RunRecord run) {
     final points = run.coordinates.map((p) => LatLng(p[0], p[1])).toList();
     final center = points.isEmpty ? const LatLng(52.0907, 5.1214) : points[points.length ~/ 2];
+    final detailMapController = MapController();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -1003,13 +1004,44 @@ class _RunHomePageState extends State<RunHomePage> {
                   child: points.isEmpty
                       ? const Center(child: Text('Voor deze training is geen GPS-route opgeslagen.', textAlign: TextAlign.center, style: TextStyle(color: muted)))
                       : FlutterMap(
-                          options: MapOptions(initialCenter: center, initialZoom: 13),
+                          mapController: detailMapController,
+                          options: MapOptions(
+                            initialCenter: center,
+                            initialZoom: 13,
+                            onMapReady: () {
+                              if (points.length > 1) {
+                                detailMapController.fitCamera(
+                                  CameraFit.bounds(
+                                    bounds: LatLngBounds.fromPoints(points),
+                                    padding: const EdgeInsets.all(36),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
                           children: [
                             TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.draveinx.runtracker'),
                             if (points.length > 1) PolylineLayer(polylines: [Polyline(points: points, color: lime, strokeWidth: 5)]),
                             MarkerLayer(markers: [
-                              Marker(point: points.first, width: 18, height: 18, child: Container(decoration: BoxDecoration(color: lime, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)))),
-                              if (points.length > 1) Marker(point: points.last, width: 18, height: 18, child: Container(decoration: BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)))),
+                              Marker(
+                                point: points.first,
+                                width: 30,
+                                height: 30,
+                                child: const Tooltip(
+                                  message: 'Start',
+                                  child: Icon(Icons.flag_circle_rounded, color: lime, size: 28),
+                                ),
+                              ),
+                              if (points.length > 1)
+                                Marker(
+                                  point: points.last,
+                                  width: 30,
+                                  height: 30,
+                                  child: const Tooltip(
+                                    message: 'Finish',
+                                    child: Icon(Icons.location_on_rounded, color: Colors.redAccent, size: 28),
+                                  ),
+                                ),
                             ]),
                             const RichAttributionWidget(attributions: [TextSourceAttribution('© OpenStreetMap contributors')]),
                           ],
