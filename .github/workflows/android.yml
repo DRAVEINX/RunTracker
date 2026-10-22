@@ -35,7 +35,7 @@ jobs:
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
           """
           text = text.replace("<application", permissions + "    <application", 1)
-          text = text.replace('android:label="PULSORA"', 'android:label="RunTracker"')
+          text = text.replace('android:label="runtracker"', 'android:label="PULSORA"')
           path.write_text(text)
           PY
       - name: Flutter version
