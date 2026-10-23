@@ -52,7 +52,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('fitness-history-search')), findsOneWidget);
-    expect(find.text('Zoek op oefening, sessie of notitie…'), findsOneWidget);
+    expect(find.text('Zoek op oefening, sessie, datum of notitie…'), findsOneWidget);
     await tester.dragUntilVisible(
       find.text('PERSOONLIJKE RECORDS'),
       find.byType(ListView).last,
