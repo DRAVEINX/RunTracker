@@ -793,6 +793,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
         record.exercise,
         record.sessionName,
         record.notes,
+        record.date,
         record.sets.toString(),
         record.reps.toString(),
         record.weightKg.toString(),
