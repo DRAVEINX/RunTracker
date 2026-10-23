@@ -784,7 +784,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
     final weightChange = latestComparison == null || firstComparison == null
         ? 0.0
         : latestComparison.weightKg - firstComparison.weightKg;
-    final searchQuery = fitnessSearch.trim().toLowerCase();
+    final searchQuery = fitnessSearch.trim().toLowerCase().replaceAll(',', '.');
     final filteredFitnessHistory = <FitnessRecord>[];
     final groupedFitnessHistory = <String, List<FitnessRecord>>{};
     for (var index = 0; index < fitnessHistory.length; index++) {
