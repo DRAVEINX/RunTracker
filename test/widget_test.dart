@@ -129,11 +129,7 @@ void main() {
 
     await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Onvindbaar');
     await tester.pumpAndSettle();
-    await tester.dragUntilVisible(
-      find.text('Geen trainingen gevonden'),
-      find.byType(ListView).last,
-      const Offset(0, -300),
-    );
+    await tester.ensureVisible(find.text('Geen trainingen gevonden'));
     await tester.pumpAndSettle();
     expect(find.text('Geen trainingen gevonden'), findsOneWidget);
   });
