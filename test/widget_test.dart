@@ -29,6 +29,12 @@ void main() {
     expect(find.text('STRENGTH STUDIO'), findsOneWidget);
     expect(find.text('Training toevoegen'), findsOneWidget);
     expect(find.text('VOLUME PER DAG'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.text('PERSOONLIJKE RECORDS'),
+      find.byType(ListView).last,
+      const Offset(0, -350),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('PERSOONLIJKE RECORDS'), findsOneWidget);
   });
 }
