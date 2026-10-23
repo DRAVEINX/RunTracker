@@ -121,7 +121,12 @@ void main() {
     await tester.tap(find.byTooltip('Fitnesslogboek'));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(const ValueKey('fitness-history-search')));
+    await tester.dragUntilVisible(
+      find.byKey(const ValueKey('fitness-history-search')),
+      find.byType(ListView).last,
+      const Offset(0, -300),
+    );
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Benen');
     await tester.pumpAndSettle();
     expect(find.text('Benen'), findsAtLeastNWidgets(1));
@@ -129,8 +134,7 @@ void main() {
 
     await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Onvindbaar');
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Geen trainingen gevonden'));
-    await tester.pumpAndSettle();
+    expect(find.text('Geen trainingen gevonden'), findsOneWidget);
     expect(find.text('Geen trainingen gevonden'), findsOneWidget);
   });
 }
