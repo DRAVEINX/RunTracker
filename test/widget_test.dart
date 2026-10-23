@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pulsora/main.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('home screen shows running metrics and activity modes', (tester) async {
     await tester.pumpWidget(const PulsoraApp());
     await tester.pumpAndSettle();
@@ -30,6 +35,10 @@ void main() {
     expect(find.text('STRENGTH STUDIO'), findsOneWidget);
     expect(find.text('Nieuwe trainingssessie'), findsOneWidget);
     expect(find.text('VOLUME PER DAG'), findsOneWidget);
+    expect(find.text('PRESTATIES VERGELIJKEN'), findsOneWidget);
+    expect(find.text('Volg je gewicht per oefening'), findsOneWidget);
+    expect(find.text('Registreer eerst een oefening om je voortgang te vergelijken.'), findsOneWidget);
+    expect(find.text('Je eerste training begint hier'), findsOneWidget);
     await tester.dragUntilVisible(
       find.byKey(const ValueKey('fitness-history-search')),
       find.byType(ListView).last,
