@@ -141,5 +141,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Geen trainingen gevonden'), findsNothing);
     expect(find.text('Rustig tempo'), findsOneWidget);
+
+    // Notes are searchable too, not only exercise and session names.
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Rustig tempo');
+    await tester.pumpAndSettle();
+    expect(find.text('Rustig tempo'), findsOneWidget);
+    expect(find.text('Geen trainingen gevonden'), findsNothing);
+
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Leg press');
+    await tester.pumpAndSettle();
+    expect(find.text('Rustig tempo'), findsOneWidget);
+    expect(find.text('Geen trainingen gevonden'), findsNothing);
   });
 }
