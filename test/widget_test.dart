@@ -143,7 +143,8 @@ void main() {
     expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
 
     // Notes are searchable too, not only exercise and session names.
-    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Rustig tempo');
+    // Search is case-insensitive and ignores accidental surrounding spaces.
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), '  RUSTIG TEMPO  ');
     await tester.pumpAndSettle();
     expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
     expect(find.text('Geen trainingen gevonden'), findsNothing);
