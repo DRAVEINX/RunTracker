@@ -148,6 +148,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
   double weeklyGoalKm = 10;
   String historyFilter = 'Alles';
   String activityType = 'hardlopen';
+  String fitnessSearch = '';
 
   @override
   void initState() {
@@ -851,6 +852,23 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
       const SizedBox(height: 24),
       const Text('JOUW FITNESSLOGBOEK', style: TextStyle(color: muted, fontSize: 11, letterSpacing: 1.6, fontWeight: FontWeight.w900)),
       const SizedBox(height: 10),
+      TextField(
+        key: const ValueKey('fitness-history-search'),
+        onChanged: (value) => setState(() => fitnessSearch = value.trim().toLowerCase()),
+        decoration: InputDecoration(
+          hintText: 'Zoek op oefening of sessie…',
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: fitnessSearch.isEmpty ? null : IconButton(
+            tooltip: 'Zoekopdracht wissen',
+            onPressed: () => setState(() => fitnessSearch = ''),
+            icon: const Icon(Icons.close_rounded),
+          ),
+          filled: true,
+          fillColor: panel,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        ),
+      ),
+      const SizedBox(height: 10),
       if (fitnessHistory.isEmpty)
         Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
           child: const Column(children: [
@@ -858,8 +876,20 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
             Text('Je eerste training begint hier', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)), SizedBox(height: 6),
             Text('Voeg een oefening toe en bekijk later gewicht, sets en herhalingen.', textAlign: TextAlign.center, style: TextStyle(color: muted, height: 1.4)),
           ]))
+      else if (fitnessHistory.where((r) => r.exercise.toLowerCase().contains(fitnessSearch) || r.sessionName.toLowerCase().contains(fitnessSearch) || r.notes.toLowerCase().contains(fitnessSearch)).isEmpty)
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
+          child: const Column(children: [
+            Icon(Icons.search_off_rounded, color: muted, size: 36),
+            SizedBox(height: 10),
+            Text('Geen trainingen gevonden', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            SizedBox(height: 6),
+            Text('Probeer een andere zoekterm voor je oefening, sessie of notitie.', textAlign: TextAlign.center, style: TextStyle(color: muted, height: 1.4)),
+          ]),
+        )
       else
-        ...fitnessHistory.map((r) {
+        ...fitnessHistory.where((r) => r.exercise.toLowerCase().contains(fitnessSearch) || r.sessionName.toLowerCase().contains(fitnessSearch) || r.notes.toLowerCase().contains(fitnessSearch)).map((r) {
           final date = DateTime.tryParse(r.date)?.toLocal();
           final dateText = date == null ? 'Datum onbekend' : '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year} · ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
           return Padding(padding: const EdgeInsets.only(bottom: 10), child: Container(
