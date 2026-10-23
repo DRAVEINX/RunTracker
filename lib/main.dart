@@ -362,6 +362,81 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
     }
   }
 
+  Future<void> centerOnCurrentLocation() async {
+    if (!mounted) return;
+    setState(() => status = 'Huidige locatie ophalen…');
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
+      if (!serviceEnabled) {
+        setState(() => status = 'Schakel locatie/GPS in op je telefoon');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Schakel locatie/GPS in om je huidige plek op de kaart te tonen.')),
+        );
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (!mounted) return;
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (!mounted) return;
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() => status = 'Locatietoestemming is nodig om je plek te tonen');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Geef PULSORA locatietoestemming via de Android-instellingen om naar je huidige locatie te gaan.')),
+        );
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+      if (!mounted) return;
+      if (!position.latitude.isFinite ||
+          !position.longitude.isFinite ||
+          position.latitude < -90 ||
+          position.latitude > 90 ||
+          position.longitude < -180 ||
+          position.longitude > 180) {
+        setState(() => status = 'Je huidige locatie kon niet worden bepaald');
+        return;
+      }
+
+      final point = LatLng(position.latitude, position.longitude);
+      try {
+        mapController.move(point, 16);
+      } catch (_) {
+        if (mounted) {
+          setState(() => status = 'Kaart wordt geladen; tik nogmaals op mijn locatie');
+        }
+        return;
+      }
+      setState(() {
+        status = 'Huidige locatie gevonden · nauwkeurigheid ${position.accuracy.round()} m';
+      });
+    } on TimeoutException {
+      if (mounted) {
+        setState(() => status = 'Locatie ophalen duurt te lang');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PULSORA kon je locatie niet op tijd ophalen. Controleer GPS en probeer opnieuw.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => status = 'Huidige locatie kon niet worden opgehaald');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Je locatie kon niet worden opgehaald. Controleer GPS en locatietoestemming.')),
+        );
+      }
+    }
+  }
+
   void handleGpsError() {
     if (!mounted || !running) return;
     timer?.cancel();
@@ -1390,7 +1465,8 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
                   child: FloatingActionButton.small(
                     heroTag: 'centerMap',
                     backgroundColor: panel, foregroundColor: lime,
-                    onPressed: route.isEmpty ? null : () => mapController.move(route.last, 16),
+                    tooltip: 'Ga naar mijn huidige locatie',
+                    onPressed: centerOnCurrentLocation,
                     child: const Icon(Icons.my_location_rounded),
                   ),
                 ),
