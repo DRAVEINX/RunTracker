@@ -153,5 +153,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
     expect(find.text('Geen trainingen gevonden'), findsNothing);
+
+    // Numeric training details are searchable too (weight, sets and reps).
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), '25.5');
+    await tester.pumpAndSettle();
+    expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
+    expect(find.text('Geen trainingen gevonden'), findsNothing);
   });
 }
