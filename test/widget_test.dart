@@ -79,8 +79,8 @@ void main() {
 
     expect(find.text('PRESTATIES VERGELIJKEN'), findsOneWidget);
     expect(find.text('Leg press'), findsAtLeastNWidgets(1));
-    expect(find.text('25.5 kg'), findsOneWidget);
+    // The latest weight is shown in both the comparison card and workout history.
+    expect(find.text('25.5 kg'), findsAtLeastNWidgets(1));
     expect(find.text('+5.5 kg'), findsOneWidget);
   });
-
 }
