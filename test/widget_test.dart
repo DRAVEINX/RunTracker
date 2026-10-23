@@ -128,6 +128,7 @@ void main() {
       const Offset(0, -300),
     );
     await tester.pumpAndSettle();
+    expect(find.text('Zoek op oefening, sessie, datum of notitie…'), findsOneWidget);
     await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Benen');
     await tester.pumpAndSettle();
     expect(find.text('Benen'), findsAtLeastNWidgets(1));
