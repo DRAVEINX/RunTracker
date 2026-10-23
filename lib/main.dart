@@ -789,9 +789,18 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
     final groupedFitnessHistory = <String, List<FitnessRecord>>{};
     for (var index = 0; index < fitnessHistory.length; index++) {
       final record = fitnessHistory[index];
-      final matchesSearch = record.exercise.toLowerCase().contains(searchQuery) ||
-          record.sessionName.toLowerCase().contains(searchQuery) ||
-          record.notes.toLowerCase().contains(searchQuery);
+      final searchableValues = <String>[
+        record.exercise,
+        record.sessionName,
+        record.notes,
+        record.sets.toString(),
+        record.reps.toString(),
+        record.weightKg.toString(),
+        record.weightKg.toStringAsFixed(1),
+      ];
+      final matchesSearch = searchableValues.any(
+        (value) => value.toLowerCase().contains(searchQuery),
+      );
       if (!matchesSearch) continue;
       filteredFitnessHistory.add(record);
       // Old records without a session ID remain separate instead of being merged accidentally.
