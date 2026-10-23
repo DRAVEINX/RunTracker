@@ -149,6 +149,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
   String historyFilter = 'Alles';
   String activityType = 'hardlopen';
   String fitnessSearch = '';
+  String selectedFitnessExercise = '';
 
   @override
   void initState() {
@@ -764,6 +765,25 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
     }
     final sortedRecords = personalRecords.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+    final exerciseNames = fitnessHistory
+        .map((record) => record.exercise.trim())
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final comparisonExercise = exerciseNames.contains(selectedFitnessExercise)
+        ? selectedFitnessExercise
+        : (exerciseNames.isEmpty ? '' : exerciseNames.first);
+    final comparisonRecords = fitnessHistory
+        .where((record) => record.exercise.trim() == comparisonExercise)
+        .toList()
+      ..sort((a, b) => (DateTime.tryParse(a.date) ?? DateTime(1970))
+          .compareTo(DateTime.tryParse(b.date) ?? DateTime(1970)));
+    final latestComparison = comparisonRecords.isEmpty ? null : comparisonRecords.last;
+    final firstComparison = comparisonRecords.isEmpty ? null : comparisonRecords.first;
+    final weightChange = latestComparison == null || firstComparison == null
+        ? 0.0
+        : latestComparison.weightKg - firstComparison.weightKg;
     final filteredFitnessHistory = <FitnessRecord>[];
     final groupedFitnessHistory = <String, List<FitnessRecord>>{};
     for (var index = 0; index < fitnessHistory.length; index++) {
@@ -860,6 +880,70 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
                 Text('${entry.value.toStringAsFixed(1)} kg', style: const TextStyle(color: lime, fontWeight: FontWeight.w900)),
               ]),
             )),
+        ]),
+      ),
+      const SizedBox(height: 16),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('PRESTATIES VERGELIJKEN', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1.4, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          const Text('Volg je gewicht per oefening', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          if (exerciseNames.isEmpty)
+            const Text('Registreer eerst een oefening om je voortgang te vergelijken.', style: TextStyle(color: muted, fontSize: 12))
+          else ...[
+            DropdownButtonFormField<String>(
+              key: const ValueKey('fitness-comparison-exercise'),
+              value: comparisonExercise,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: 'Kies een oefening',
+                filled: true,
+                fillColor: ink,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              ),
+              items: exerciseNames.map((name) => DropdownMenuItem<String>(value: name, child: Text(name, overflow: TextOverflow.ellipsis))).toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => selectedFitnessExercise = value);
+              },
+            ),
+            const SizedBox(height: 12),
+            if (latestComparison != null && firstComparison != null)
+              Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('LAATSTE GEWICHT', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1)),
+                  const SizedBox(height: 4),
+                  Text('${latestComparison.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: lime, fontSize: 22, fontWeight: FontWeight.w900)),
+                ])),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('VERSCHIL', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1)),
+                  const SizedBox(height: 4),
+                  Text('${weightChange > 0 ? '+' : ''}${weightChange.toStringAsFixed(1)} kg', style: TextStyle(color: weightChange >= 0 ? lime : const Color(0xFFFF9A8A), fontSize: 22, fontWeight: FontWeight.w900)),
+                  Text('eerste → laatste registratie', style: const TextStyle(color: muted, fontSize: 10)),
+                ])),
+              ]),
+            const SizedBox(height: 12),
+            ...comparisonRecords.reversed.take(5).toList().reversed.map((record) {
+              final date = DateTime.tryParse(record.date)?.toLocal();
+              final label = date == null ? 'Datum onbekend' : '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}';
+              final maxWeight = comparisonRecords.fold<double>(0, (max, item) => item.weightKg > max ? item.weightKg : max);
+              final fraction = maxWeight <= 0 ? 0.0 : (record.weightKg / maxWeight).clamp(0.0, 1.0);
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(children: [
+                  SizedBox(width: 42, child: Text(label, style: const TextStyle(color: muted, fontSize: 11))),
+                  Expanded(child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(value: fraction, minHeight: 8, backgroundColor: const Color(0xFF303B50), color: violet),
+                  )),
+                  const SizedBox(width: 10),
+                  SizedBox(width: 58, child: Text('${record.weightKg.toStringAsFixed(1)} kg', textAlign: TextAlign.end, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800))),
+                ]),
+              );
+            }),
+          ],
         ]),
       ),
       const SizedBox(height: 24),
