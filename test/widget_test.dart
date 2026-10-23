@@ -111,4 +111,30 @@ void main() {
     expect(find.text('25.5 kg'), findsAtLeastNWidgets(1));
     expect(find.text('+5.5 kg'), findsOneWidget);
   });
+  testWidgets('fitness history search filters sessions and shows empty state', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'pulsora_fitness_history': '[{"date":"2026-01-08T10:00:00.000","exercise":"Leg press","sets":3,"reps":10,"weightKg":25.5,"notes":"Rustig tempo","sessionId":"one","sessionName":"Benen"}]',
+    });
+
+    await tester.pumpWidget(const PulsoraApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Fitnesslogboek'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const ValueKey('fitness-history-search')));
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Benen');
+    await tester.pumpAndSettle();
+    expect(find.text('Benen'), findsAtLeastNWidgets(1));
+    expect(find.text('Geen trainingen gevonden'), findsNothing);
+
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Onvindbaar');
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(
+      find.text('Geen trainingen gevonden'),
+      find.byType(ListView).last,
+      const Offset(0, -300),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Geen trainingen gevonden'), findsOneWidget);
+  });
 }
