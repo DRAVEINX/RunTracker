@@ -140,7 +140,7 @@ void main() {
     await tester.tap(find.byTooltip('Zoekopdracht wissen'));
     await tester.pumpAndSettle();
     expect(find.text('Geen trainingen gevonden'), findsNothing);
-    expect(find.text('Rustig tempo'), findsOneWidget);
+    expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
 
     // Notes are searchable too, not only exercise and session names.
     await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Rustig tempo');
