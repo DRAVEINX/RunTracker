@@ -35,6 +35,12 @@ void main() {
     expect(find.text('STRENGTH STUDIO'), findsOneWidget);
     expect(find.text('Nieuwe trainingssessie'), findsOneWidget);
     expect(find.text('VOLUME PER DAG'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.text('PRESTATIES VERGELIJKEN'),
+      find.byType(ListView).last,
+      const Offset(0, -350),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('PRESTATIES VERGELIJKEN'), findsOneWidget);
     expect(find.text('Volg je gewicht per oefening'), findsOneWidget);
     expect(find.text('Registreer eerst een oefening om je voortgang te vergelijken.'), findsOneWidget);
