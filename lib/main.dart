@@ -604,6 +604,23 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
   Widget fitnessView() {
     final totalVolume = fitnessHistory.fold<double>(0, (sum, r) => sum + r.sets * r.reps * r.weightKg);
     final exercises = fitnessHistory.map((r) => r.exercise.toLowerCase()).toSet().length;
+    final now = DateTime.now();
+    final dailyVolume = List<double>.generate(7, (index) {
+      final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: 6 - index));
+      return fitnessHistory.where((r) {
+        final date = DateTime.tryParse(r.date)?.toLocal();
+        return date != null && date.year == day.year && date.month == day.month && date.day == day.day;
+      }).fold<double>(0, (sum, r) => sum + r.sets * r.reps * r.weightKg);
+    });
+    final maxDailyVolume = dailyVolume.fold<double>(0, (max, value) => value > max ? value : max);
+    final personalRecords = <String, double>{};
+    for (final record in fitnessHistory) {
+      final key = record.exercise.trim();
+      final previous = personalRecords[key];
+      if (previous == null || record.weightKg > previous) personalRecords[key] = record.weightKg;
+    }
+    final sortedRecords = personalRecords.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     return ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 28), children: [
       Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(
         gradient: const LinearGradient(colors: [Color(0xFF263654), Color(0xFF1A2238), Color(0xFF352B58)], begin: Alignment.topLeft, end: Alignment.bottomRight),
@@ -637,6 +654,58 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
             Text('${totalVolume.toStringAsFixed(0)} kg · sets × herhalingen × gewicht', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
           ])),
         ])),
+      const SizedBox(height: 12),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('VOLUME PER DAG', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1.4, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          const Text('Laatste 7 dagen', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          const SizedBox(height: 14),
+          SizedBox(height: 94, child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: List.generate(7, (index) {
+            final value = dailyVolume[index];
+            final fraction = maxDailyVolume <= 0 ? 0.0 : value / maxDailyVolume;
+            final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: 6 - index));
+            const labels = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
+            return Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+              Expanded(child: Align(alignment: Alignment.bottomCenter, child: Container(
+                width: double.infinity,
+                height: value <= 0 ? 4 : (12 + fraction * 48),
+                decoration: BoxDecoration(
+                  color: value <= 0 ? const Color(0xFF303B50) : lime,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
+                ),
+              ))),
+              const SizedBox(height: 7),
+              Text(labels[day.weekday - 1], style: const TextStyle(color: muted, fontSize: 10, fontWeight: FontWeight.w700)),
+            ])));
+          }))),
+          const SizedBox(height: 8),
+          Text(maxDailyVolume <= 0 ? 'Voeg een training toe om je voortgang te zien.' : 'Hoogste dagvolume: ${maxDailyVolume.toStringAsFixed(0)} kg', style: const TextStyle(color: muted, fontSize: 11)),
+        ]),
+      ),
+      const SizedBox(height: 12),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('PERSOONLIJKE RECORDS', style: TextStyle(color: muted, fontSize: 10, letterSpacing: 1.4, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          if (sortedRecords.isEmpty)
+            const Text('Je records verschijnen hier zodra je oefeningen vastlegt.', style: TextStyle(color: muted, fontSize: 12))
+          else
+            ...sortedRecords.take(5).map((entry) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(children: [
+                const Icon(Icons.emoji_events_outlined, color: lime, size: 19),
+                const SizedBox(width: 8),
+                Expanded(child: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w700))),
+                Text('${entry.value.toStringAsFixed(1)} kg', style: const TextStyle(color: lime, fontWeight: FontWeight.w900)),
+              ]),
+            )),
+        ]),
+      ),
       const SizedBox(height: 24),
       const Text('JOUW FITNESSLOGBOEK', style: TextStyle(color: muted, fontSize: 11, letterSpacing: 1.6, fontWeight: FontWeight.w900)),
       const SizedBox(height: 10),
