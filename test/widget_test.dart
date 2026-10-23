@@ -28,7 +28,7 @@ void main() {
     await tester.tap(find.byTooltip('Fitnesslogboek'));
     await tester.pumpAndSettle();
     expect(find.text('STRENGTH STUDIO'), findsOneWidget);
-    expect(find.text('Training toevoegen'), findsOneWidget);
+    expect(find.text('Nieuwe trainingssessie'), findsOneWidget);
     expect(find.text('VOLUME PER DAG'), findsOneWidget);
     await tester.dragUntilVisible(
       find.text('PERSOONLIJKE RECORDS'),
