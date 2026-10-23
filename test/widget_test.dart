@@ -159,5 +159,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
     expect(find.text('Geen trainingen gevonden'), findsNothing);
+
+    // Dutch decimal-comma input should find the same weight as decimal-point input.
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), '25,5');
+    await tester.pumpAndSettle();
+    expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
+    expect(find.text('Geen trainingen gevonden'), findsNothing);
   });
 }
