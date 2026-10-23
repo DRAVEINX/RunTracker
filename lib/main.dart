@@ -79,18 +79,46 @@ class RunRecord {
 }
 
 class FitnessRecord {
-  const FitnessRecord({required this.date, required this.exercise, required this.sets, required this.reps, required this.weightKg, this.notes = ''});
+  const FitnessRecord({
+    required this.date,
+    required this.exercise,
+    required this.sets,
+    required this.reps,
+    required this.weightKg,
+    this.notes = '',
+    this.sessionId = '',
+    this.sessionName = '',
+  });
   final String date;
   final String exercise;
   final int sets;
   final int reps;
   final double weightKg;
   final String notes;
-  Map<String, dynamic> toJson() => {'date': date, 'exercise': exercise, 'sets': sets, 'reps': reps, 'weightKg': weightKg, 'notes': notes};
+  final String sessionId;
+  final String sessionName;
+
+  Map<String, dynamic> toJson() => {
+        'date': date,
+        'exercise': exercise,
+        'sets': sets,
+        'reps': reps,
+        'weightKg': weightKg,
+        'notes': notes,
+        'sessionId': sessionId,
+        'sessionName': sessionName,
+      };
+
   factory FitnessRecord.fromJson(Map<String, dynamic> json) => FitnessRecord(
-    date: json['date'] as String, exercise: json['exercise'] as String, sets: json['sets'] as int,
-    reps: json['reps'] as int, weightKg: (json['weightKg'] as num).toDouble(), notes: json['notes'] as String? ?? '',
-  );
+        date: json['date'] as String,
+        exercise: json['exercise'] as String,
+        sets: json['sets'] as int,
+        reps: json['reps'] as int,
+        weightKg: (json['weightKg'] as num).toDouble(),
+        notes: json['notes'] as String? ?? '',
+        sessionId: json['sessionId'] as String? ?? '',
+        sessionName: json['sessionName'] as String? ?? '',
+      );
 }
 
 class PulsoraHomePage extends StatefulWidget {
@@ -540,55 +568,169 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
   }
 
   Future<void> addFitnessRecord() async {
-    final exercise = TextEditingController();
-    final sets = TextEditingController(text: '3');
-    final reps = TextEditingController(text: '10');
-    final weight = TextEditingController(text: '0');
-    final notes = TextEditingController();
-    final record = await showDialog<FitnessRecord>(context: context, builder: (ctx) => AlertDialog(
-      backgroundColor: panel,
-      title: const Text('Training vastleggen'),
-      content: SizedBox(width: 420, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: exercise, autofocus: true, decoration: const InputDecoration(labelText: 'Oefening', hintText: 'Bijv. leg press')),
-        Row(children: [
-          Expanded(child: TextField(controller: sets, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Sets'))),
-          const SizedBox(width: 12),
-          Expanded(child: TextField(controller: reps, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Herhalingen'))),
-        ]),
-        TextField(controller: weight, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Gewicht in kg', helperText: '0 = lichaamsgewicht of geen extra gewicht')),
-        TextField(controller: notes, maxLines: 2, decoration: const InputDecoration(labelText: 'Notitie (optioneel)')),
-      ]))),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuleren')),
-        FilledButton(onPressed: () {
-          final name = exercise.text.trim();
-          final setCount = int.tryParse(sets.text.trim());
-          final repCount = int.tryParse(reps.text.trim());
-          final kg = double.tryParse(weight.text.trim().replaceAll(',', '.'));
-          if (name.isEmpty || setCount == null || setCount < 1 || setCount > 100 ||
-              repCount == null || repCount < 1 || repCount > 1000 ||
-              kg == null || !kg.isFinite || kg < 0 || kg > 2000) {
-            ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Controleer oefening, sets, herhalingen en gewicht.')));
-            return;
-          }
-          Navigator.pop(ctx, FitnessRecord(date: DateTime.now().toIso8601String(), exercise: name,
-            sets: setCount, reps: repCount, weightKg: kg, notes: notes.text.trim()));
-        }, child: const Text('Training opslaan')),
-      ],
-    ));
-    exercise.dispose(); sets.dispose(); reps.dispose(); weight.dispose(); notes.dispose();
-    if (record == null || !mounted) return;
-    setState(() => fitnessHistory.insert(0, record));
-    if (fitnessHistory.length > 300) fitnessHistory.removeRange(300, fitnessHistory.length);
-    try {
-      await saveFitnessHistory();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitnesstraining opgeslagen')));
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => fitnessHistory.remove(record));
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opslaan is niet gelukt. Controleer de opslagruimte en probeer opnieuw.')));
+    final sessionName = TextEditingController(text: 'Krachttraining');
+    final exercises = <Map<String, TextEditingController>>[
+      _newExerciseControllers(),
+    ];
+    String? validationMessage;
+    final sessionId = DateTime.now().microsecondsSinceEpoch.toString();
+    final date = DateTime.now().toIso8601String();
+
+    final accepted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (ctx, refreshDialog) => AlertDialog(
+          backgroundColor: panel,
+          title: const Text('Nieuwe trainingssessie'),
+          content: SizedBox(
+            width: 460,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: sessionName,
+                    decoration: const InputDecoration(labelText: 'Naam van de training', hintText: 'Bijv. Benen en core'),
+                  ),
+                  const SizedBox(height: 12),
+                  ...List.generate(exercises.length, (index) {
+                    final item = exercises[index];
+                    return Container(
+                      key: ValueKey('exercise-$index'),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: ink,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF29344A)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [
+                            Expanded(child: Text('Oefening ${index + 1}', style: const TextStyle(color: lime, fontWeight: FontWeight.w800))),
+                            if (exercises.length > 1)
+                              IconButton(
+                                tooltip: 'Oefening verwijderen',
+                                onPressed: () {
+                                  final removed = exercises.removeAt(index);
+                                  for (final controller in removed.values) { controller.dispose(); }
+                                  refreshDialog(() => validationMessage = null);
+                                },
+                                icon: const Icon(Icons.remove_circle_outline),
+                              ),
+                          ]),
+                          TextField(controller: item['exercise'], decoration: const InputDecoration(labelText: 'Oefening', hintText: 'Bijv. leg press')),
+                          Row(children: [
+                            Expanded(child: TextField(controller: item['sets'], keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Sets'))),
+                            const SizedBox(width: 10),
+                            Expanded(child: TextField(controller: item['reps'], keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Herhalingen'))),
+                          ]),
+                          TextField(controller: item['weight'], keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Gewicht (kg)', helperText: '0 = lichaamsgewicht of geen extra gewicht')),
+                          TextField(controller: item['notes'], maxLines: 2, decoration: const InputDecoration(labelText: 'Notitie (optioneel)')),
+                        ],
+                      ),
+                    );
+                  }),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        if (exercises.length >= 20) {
+                          refreshDialog(() => validationMessage = 'Je kunt maximaal 20 oefeningen per sessie toevoegen.');
+                          return;
+                        }
+                        refreshDialog(() {
+                          exercises.add(_newExerciseControllers());
+                          validationMessage = null;
+                        });
+                      },
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: const Text('Oefening toevoegen'),
+                    ),
+                  ),
+                  if (validationMessage != null)
+                    Align(alignment: Alignment.centerLeft, child: Text(validationMessage!, style: const TextStyle(color: Colors.orangeAccent))),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Annuleren')),
+            FilledButton(
+              onPressed: () {
+                if (sessionName.text.trim().isEmpty) {
+                  refreshDialog(() => validationMessage = 'Vul een naam voor de training in.');
+                  return;
+                }
+                for (var i = 0; i < exercises.length; i++) {
+                  final item = exercises[i];
+                  final name = item['exercise']!.text.trim();
+                  final setCount = int.tryParse(item['sets']!.text.trim());
+                  final repCount = int.tryParse(item['reps']!.text.trim());
+                  final kg = double.tryParse(item['weight']!.text.trim().replaceAll(',', '.'));
+                  if (name.isEmpty || setCount == null || setCount < 1 || setCount > 100 ||
+                      repCount == null || repCount < 1 || repCount > 1000 ||
+                      kg == null || !kg.isFinite || kg < 0 || kg > 2000) {
+                    refreshDialog(() => validationMessage = 'Controleer oefening ${i + 1}: naam, sets, herhalingen en gewicht.');
+                    return;
+                  }
+                }
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Sessie opslaan'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (accepted == true && mounted) {
+      final name = sessionName.text.trim();
+      final records = exercises.map((item) => FitnessRecord(
+        date: date,
+        exercise: item['exercise']!.text.trim(),
+        sets: int.parse(item['sets']!.text.trim()),
+        reps: int.parse(item['reps']!.text.trim()),
+        weightKg: double.parse(item['weight']!.text.trim().replaceAll(',', '.')),
+        notes: item['notes']!.text.trim(),
+        sessionId: sessionId,
+        sessionName: name,
+      )).toList();
+      setState(() {
+        fitnessHistory.insertAll(0, records);
+        if (fitnessHistory.length > 300) fitnessHistory.removeRange(300, fitnessHistory.length);
+      });
+      try {
+        await saveFitnessHistory();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${records.length} oefening(en) opgeslagen in "$name"')),
+          );
+        }
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => fitnessHistory.removeWhere((record) => record.sessionId == sessionId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Opslaan is niet gelukt. Controleer de opslagruimte en probeer opnieuw.')),
+        );
+      }
+    }
+
+    sessionName.dispose();
+    for (final item in exercises) {
+      for (final controller in item.values) { controller.dispose(); }
     }
   }
+
+  Map<String, TextEditingController> _newExerciseControllers() => {
+        'exercise': TextEditingController(),
+        'sets': TextEditingController(text: '3'),
+        'reps': TextEditingController(text: '10'),
+        'weight': TextEditingController(text: '0'),
+        'notes': TextEditingController(),
+      };
 
   Future<void> deleteFitnessRecord(FitnessRecord record) async {
     final index = fitnessHistory.indexOf(record);
@@ -635,7 +777,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
           SizedBox(width: double.infinity, child: FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: lime, foregroundColor: ink, padding: const EdgeInsets.symmetric(vertical: 15)),
             onPressed: addFitnessRecord, icon: const Icon(Icons.add_rounded),
-            label: const Text('Training toevoegen', style: TextStyle(fontWeight: FontWeight.w900)))),
+            label: const Text('Nieuwe trainingssessie', style: TextStyle(fontWeight: FontWeight.w900)))),
         ])),
       const SizedBox(height: 16),
       Row(children: [
@@ -726,7 +868,8 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
               Container(width: 44, height: 44, decoration: BoxDecoration(color: violet.withValues(alpha: .15), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.fitness_center_rounded, color: violet)),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(r.exercise, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                Text(r.sessionName.isNotEmpty ? r.sessionName : r.exercise, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                if (r.sessionName.isNotEmpty) ...[const SizedBox(height: 3), Text(r.exercise, style: const TextStyle(color: lime, fontWeight: FontWeight.w700, fontSize: 13))],
                 const SizedBox(height: 4),
                 Text('$dateText\n${r.sets} sets × ${r.reps} herhalingen · ${r.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: muted, height: 1.45, fontSize: 12)),
                 if (r.notes.isNotEmpty) ...[const SizedBox(height: 6), Text(r.notes, style: const TextStyle(color: Color(0xFFD0D8E8), fontSize: 12))],
