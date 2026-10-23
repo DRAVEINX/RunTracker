@@ -83,4 +83,32 @@ void main() {
     expect(find.text('25.5 kg'), findsAtLeastNWidgets(1));
     expect(find.text('+5.5 kg'), findsOneWidget);
   });
+
+  testWidgets('exercise comparison updates when another exercise is selected', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'pulsora_fitness_history': '[{"date":"2026-01-01T10:00:00.000","exercise":"Bench press","sets":3,"reps":10,"weightKg":30.0,"notes":"","sessionId":"one","sessionName":"Bovenlichaam"},{"date":"2026-01-08T10:00:00.000","exercise":"Bench press","sets":3,"reps":10,"weightKg":35.0,"notes":"","sessionId":"two","sessionName":"Bovenlichaam"},{"date":"2026-01-01T10:00:00.000","exercise":"Leg press","sets":3,"reps":10,"weightKg":20.0,"notes":"","sessionId":"three","sessionName":"Benen"},{"date":"2026-01-08T10:00:00.000","exercise":"Leg press","sets":3,"reps":10,"weightKg":25.5,"notes":"","sessionId":"four","sessionName":"Benen"}]',
+    });
+
+    await tester.pumpWidget(const PulsoraApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Fitnesslogboek'));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(
+      find.text('PRESTATIES VERGELIJKEN'),
+      find.byType(ListView).last,
+      const Offset(0, -350),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('35.0 kg'), findsAtLeastNWidgets(1));
+    expect(find.text('+5.0 kg'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('fitness-comparison-exercise')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Leg press').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('25.5 kg'), findsAtLeastNWidgets(1));
+    expect(find.text('+5.5 kg'), findsOneWidget);
+  });
 }
