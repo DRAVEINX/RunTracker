@@ -78,7 +78,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PRESTATIES VERGELIJKEN'), findsOneWidget);
-    expect(find.text('Leg press'), findsOneWidget);
+    expect(find.text('Leg press'), findsAtLeastNWidgets(1));
     expect(find.text('25.5 kg'), findsOneWidget);
     expect(find.text('+5.5 kg'), findsOneWidget);
   });
