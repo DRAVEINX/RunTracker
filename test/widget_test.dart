@@ -135,7 +135,6 @@ void main() {
     await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), 'Onvindbaar');
     await tester.pumpAndSettle();
     expect(find.text('Geen trainingen gevonden'), findsOneWidget);
-    expect(find.text('Geen trainingen gevonden'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Zoekopdracht wissen'));
     await tester.pumpAndSettle();
