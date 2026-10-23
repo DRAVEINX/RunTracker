@@ -789,11 +789,18 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
     final groupedFitnessHistory = <String, List<FitnessRecord>>{};
     for (var index = 0; index < fitnessHistory.length; index++) {
       final record = fitnessHistory[index];
+      final parsedRecordDate = DateTime.tryParse(record.date);
+      final dutchRecordDate = parsedRecordDate == null
+          ? ''
+          : '${parsedRecordDate.day.toString().padLeft(2, '0')}-'
+              '${parsedRecordDate.month.toString().padLeft(2, '0')}-'
+              '${parsedRecordDate.year}';
       final searchableValues = <String>[
         record.exercise,
         record.sessionName,
         record.notes,
         record.date,
+        dutchRecordDate,
         record.sets.toString(),
         record.reps.toString(),
         record.weightKg.toString(),
