@@ -60,4 +60,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('PERSOONLIJKE RECORDS'), findsOneWidget);
   });
+
+  testWidgets('exercise comparison shows latest weight and progress', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'pulsora_fitness_history': '[{"date":"2026-01-01T10:00:00.000","exercise":"Leg press","sets":3,"reps":10,"weightKg":20.0,"notes":"","sessionId":"one","sessionName":"Benen"},{"date":"2026-01-08T10:00:00.000","exercise":"Leg press","sets":3,"reps":10,"weightKg":25.5,"notes":"","sessionId":"two","sessionName":"Benen"}]',
+    });
+
+    await tester.pumpWidget(const PulsoraApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Fitnesslogboek'));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(
+      find.text('PRESTATIES VERGELIJKEN'),
+      find.byType(ListView).last,
+      const Offset(0, -350),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('PRESTATIES VERGELIJKEN'), findsOneWidget);
+    expect(find.text('Leg press'), findsOneWidget);
+    expect(find.text('25.5 kg'), findsOneWidget);
+    expect(find.text('+5.5 kg'), findsOneWidget);
+  });
+
 }
