@@ -764,6 +764,19 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
     }
     final sortedRecords = personalRecords.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+    final filteredFitnessHistory = <FitnessRecord>[];
+    final groupedFitnessHistory = <String, List<FitnessRecord>>{};
+    for (var index = 0; index < fitnessHistory.length; index++) {
+      final record = fitnessHistory[index];
+      final matchesSearch = record.exercise.toLowerCase().contains(fitnessSearch) ||
+          record.sessionName.toLowerCase().contains(fitnessSearch) ||
+          record.notes.toLowerCase().contains(fitnessSearch);
+      if (!matchesSearch) continue;
+      filteredFitnessHistory.add(record);
+      // Old records without a session ID remain separate instead of being merged accidentally.
+      final groupKey = record.sessionId.isNotEmpty ? 'session:${record.sessionId}' : 'legacy:$index';
+      groupedFitnessHistory.putIfAbsent(groupKey, () => <FitnessRecord>[]).add(record);
+    }
     return ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 28), children: [
       Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(
         gradient: const LinearGradient(colors: [Color(0xFF263654), Color(0xFF1A2238), Color(0xFF352B58)], begin: Alignment.topLeft, end: Alignment.bottomRight),
@@ -876,7 +889,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
             Text('Je eerste training begint hier', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)), SizedBox(height: 6),
             Text('Voeg een oefening toe en bekijk later gewicht, sets en herhalingen.', textAlign: TextAlign.center, style: TextStyle(color: muted, height: 1.4)),
           ]))
-      else if (fitnessHistory.where((r) => r.exercise.toLowerCase().contains(fitnessSearch) || r.sessionName.toLowerCase().contains(fitnessSearch) || r.notes.toLowerCase().contains(fitnessSearch)).isEmpty)
+      else if (filteredFitnessHistory.isEmpty)
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
@@ -889,23 +902,55 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
           ]),
         )
       else
-        ...fitnessHistory.where((r) => r.exercise.toLowerCase().contains(fitnessSearch) || r.sessionName.toLowerCase().contains(fitnessSearch) || r.notes.toLowerCase().contains(fitnessSearch)).map((r) {
-          final date = DateTime.tryParse(r.date)?.toLocal();
+        ...groupedFitnessHistory.entries.map((entry) {
+          final records = entry.value;
+          final first = records.first;
+          final date = DateTime.tryParse(first.date)?.toLocal();
           final dateText = date == null ? 'Datum onbekend' : '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year} · ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-          return Padding(padding: const EdgeInsets.only(bottom: 10), child: Container(
-            padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Container(width: 44, height: 44, decoration: BoxDecoration(color: violet.withValues(alpha: .15), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.fitness_center_rounded, color: violet)),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(r.sessionName.isNotEmpty ? r.sessionName : r.exercise, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                if (r.sessionName.isNotEmpty) ...[const SizedBox(height: 3), Text(r.exercise, style: const TextStyle(color: lime, fontWeight: FontWeight.w700, fontSize: 13))],
-                const SizedBox(height: 4),
-                Text('$dateText\n${r.sets} sets × ${r.reps} herhalingen · ${r.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: muted, height: 1.45, fontSize: 12)),
-                if (r.notes.isNotEmpty) ...[const SizedBox(height: 6), Text(r.notes, style: const TextStyle(color: Color(0xFFD0D8E8), fontSize: 12))],
-              ])),
-              IconButton(tooltip: 'Training verwijderen', onPressed: () => deleteFitnessRecord(r), icon: const Icon(Icons.delete_outline_rounded, color: muted)),
-            ])),
+          final sessionVolume = records.fold<double>(0, (sum, r) => sum + r.sets * r.reps * r.weightKg);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF29344A))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Container(width: 44, height: 44, decoration: BoxDecoration(color: violet.withValues(alpha: .15), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.fitness_center_rounded, color: violet)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(first.sessionName.isNotEmpty ? first.sessionName : first.exercise, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 4),
+                    Text(dateText, style: const TextStyle(color: muted, height: 1.45, fontSize: 12)),
+                    const SizedBox(height: 3),
+                    Text('${records.length} oefening(en) · volume ${sessionVolume.toStringAsFixed(0)} kg', style: const TextStyle(color: lime, fontSize: 12, fontWeight: FontWeight.w800)),
+                  ])),
+                ]),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: Color(0xFF29344A)),
+                const SizedBox(height: 6),
+                ...records.map((record) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Icon(Icons.bolt_rounded, color: lime, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(record.exercise, style: const TextStyle(fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 2),
+                      Text('${record.sets} sets × ${record.reps} herhalingen · ${record.weightKg.toStringAsFixed(1)} kg', style: const TextStyle(color: muted, fontSize: 12)),
+                      if (record.notes.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(record.notes, style: const TextStyle(color: Color(0xFFD0D8E8), fontSize: 12)),
+                      ],
+                    ])),
+                    IconButton(
+                      tooltip: 'Oefening verwijderen',
+                      onPressed: () => deleteFitnessRecord(record),
+                      icon: const Icon(Icons.delete_outline_rounded, color: muted),
+                    ),
+                  ]),
+                )),
+              ]),
+            ),
           );
         }),
     ]);
