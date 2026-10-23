@@ -30,6 +30,12 @@ void main() {
     expect(find.text('STRENGTH STUDIO'), findsOneWidget);
     expect(find.text('Nieuwe trainingssessie'), findsOneWidget);
     expect(find.text('VOLUME PER DAG'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.byKey(const ValueKey('fitness-history-search')),
+      find.byType(ListView).last,
+      const Offset(0, -350),
+    );
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('fitness-history-search')), findsOneWidget);
     await tester.dragUntilVisible(
       find.text('PERSOONLIJKE RECORDS'),
