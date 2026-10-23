@@ -175,5 +175,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
     expect(find.text('Geen trainingen gevonden'), findsNothing);
+
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), '2026-01-08');
+    await tester.pumpAndSettle();
+    expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
+    expect(find.text('Geen trainingen gevonden'), findsNothing);
   });
 }
