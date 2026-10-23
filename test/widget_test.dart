@@ -136,5 +136,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Geen trainingen gevonden'), findsOneWidget);
     expect(find.text('Geen trainingen gevonden'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Zoekopdracht wissen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Geen trainingen gevonden'), findsNothing);
+    expect(find.text('Rustig tempo'), findsOneWidget);
   });
 }
