@@ -964,7 +964,7 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
         key: const ValueKey('fitness-history-search'),
         onChanged: (value) => setState(() => fitnessSearch = value.trim().toLowerCase()),
         decoration: InputDecoration(
-          hintText: 'Zoek op oefening, sessie of notitie…',
+          hintText: 'Zoek op oefening, sessie, datum of notitie…',
           prefixIcon: const Icon(Icons.search_rounded),
           suffixIcon: fitnessSearch.isEmpty ? null : IconButton(
             tooltip: 'Zoekopdracht wissen',
