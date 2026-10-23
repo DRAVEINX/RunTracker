@@ -181,5 +181,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
     expect(find.text('Geen trainingen gevonden'), findsNothing);
+
+    // Dutch day-month-year format should find the same workout date.
+    await tester.enterText(find.byKey(const ValueKey('fitness-history-search')), '08-01-2026');
+    await tester.pumpAndSettle();
+    expect(find.text('Rustig tempo'), findsAtLeastNWidgets(1));
+    expect(find.text('Geen trainingen gevonden'), findsNothing);
   });
 }
