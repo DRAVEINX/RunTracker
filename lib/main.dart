@@ -784,13 +784,14 @@ class _PulsoraHomePageState extends State<PulsoraHomePage> {
     final weightChange = latestComparison == null || firstComparison == null
         ? 0.0
         : latestComparison.weightKg - firstComparison.weightKg;
+    final searchQuery = fitnessSearch.trim().toLowerCase();
     final filteredFitnessHistory = <FitnessRecord>[];
     final groupedFitnessHistory = <String, List<FitnessRecord>>{};
     for (var index = 0; index < fitnessHistory.length; index++) {
       final record = fitnessHistory[index];
-      final matchesSearch = record.exercise.toLowerCase().contains(fitnessSearch) ||
-          record.sessionName.toLowerCase().contains(fitnessSearch) ||
-          record.notes.toLowerCase().contains(fitnessSearch);
+      final matchesSearch = record.exercise.toLowerCase().contains(searchQuery) ||
+          record.sessionName.toLowerCase().contains(searchQuery) ||
+          record.notes.toLowerCase().contains(searchQuery);
       if (!matchesSearch) continue;
       filteredFitnessHistory.add(record);
       // Old records without a session ID remain separate instead of being merged accidentally.
